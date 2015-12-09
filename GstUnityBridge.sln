@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GstUnityBridge", "GstUnityBridge.csproj", "{E7582C88-0851-4F5A-96D0-922E163E1CBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GstUnityBridge", "scripts\GstUnityBridge.csproj", "{E7582C88-0851-4F5A-96D0-922E163E1CBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
