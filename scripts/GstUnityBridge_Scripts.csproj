@@ -43,7 +43,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GStreamerCore.cs" />
+    <Compile Include="GStreamer.cs" />
     <Compile Include="GstUnityBridgePipeline.cs" />
     <Compile Include="GstUnityBridgeTexture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

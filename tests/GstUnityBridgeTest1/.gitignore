@@ -7,6 +7,7 @@ Assets/UnityVS
 [Oo]bj/
 [Tt]emp/
 [Ll]ibrary
+[Pp]lugins
  
 #These are files in the root folder of the project
 *.tmproj

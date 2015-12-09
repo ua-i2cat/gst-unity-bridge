@@ -12,12 +12,14 @@ public class GStreamer
     internal const string DllName = "GstUnityBridge";
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.I4)]
     extern static private bool gub_ref();
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_unref();
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.I4)]
     extern static private bool gub_is_active();
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

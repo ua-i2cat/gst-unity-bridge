@@ -47,11 +47,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     }
 
-
-    // Use this for initialization
     void Start()
     {
-
         if (m_InitializeOnStart && !m_HasBeenInitialized)
         {
             Initialize();
@@ -75,7 +72,6 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_Texture.Apply(false, false);
         }
         m_Texture.filterMode = FilterMode.Point;
-
     }
 
     public void Setup(string _PipelineDescription)
