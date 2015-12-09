@@ -22,17 +22,6 @@ public class GStreamer
     [return: MarshalAs(UnmanagedType.I4)]
     extern static private bool gub_is_active();
 
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_set_debug_function(IntPtr str);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void MyDelegate(string str);
-
-    static void CallBackFunction(string str)
-    {
-        Debug.Log("GstUnityBridge: " + str);
-    }
-
     public static bool IsActive
     {
         get
@@ -43,18 +32,11 @@ public class GStreamer
 
     public static void Ref()
     {
-        if (!IsActive)
-        {
-            MyDelegate callback = new MyDelegate(CallBackFunction);
-            IntPtr intptr_del = Marshal.GetFunctionPointerForDelegate(callback);
-            gub_set_debug_function(intptr_del);
-        }
         gub_ref();
     }
 
     public static void Unref()
     {
-        if (IsActive)
-            gub_unref();
+        gub_unref();
     }
 }
