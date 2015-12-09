@@ -18,10 +18,10 @@ public class GStreamer
     extern static private void gub_unref();
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private bool gub_isActive();
+    extern static private bool gub_is_active();
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_SetDebugFunction(IntPtr str);
+    extern static private void gub_set_debug_function(IntPtr str);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void MyDelegate(string str);
@@ -35,7 +35,7 @@ public class GStreamer
     {
         get
         {
-            return gub_isActive();
+            return gub_is_active();
         }
     }
 
@@ -45,7 +45,7 @@ public class GStreamer
         {
             MyDelegate callback = new MyDelegate(CallBackFunction);
             IntPtr intptr_del = Marshal.GetFunctionPointerForDelegate(callback);
-            gub_SetDebugFunction(intptr_del);
+            gub_set_debug_function(intptr_del);
         }
         gub_ref();
     }
