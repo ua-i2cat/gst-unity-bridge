@@ -38,10 +38,7 @@ public class GstUnityBridgePipeline
     extern static private void gub_pipeline_setup(System.IntPtr p, [MarshalAs(UnmanagedType.LPStr)]string pipeline_description);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_pipeline_get_frame_size(System.IntPtr p, ref int w, ref int h);
-
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private bool gub_pipeline_grab_frame(System.IntPtr p, ref int w, ref int h);
+    extern static private int gub_pipeline_grab_frame(System.IntPtr p, ref int w, ref int h);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_blit_image(System.IntPtr p, System.IntPtr _TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight);
@@ -97,16 +94,6 @@ public class GstUnityBridgePipeline
         gub_pipeline_close(m_Instance);
     }
 
-    public Vector2 FrameSize
-    {
-        get
-        {
-            int w = 0, h = 0;
-            gub_pipeline_get_frame_size(m_Instance, ref w, ref h);
-            return new Vector2(w, h);
-        }
-    }
-
     public GstUnityBridgePipeline()
     {
         m_Instance = gub_pipeline_create();
@@ -120,7 +107,7 @@ public class GstUnityBridgePipeline
     public bool GrabFrame(out Vector2 frameSize)
     {
         int w = 0, h = 0;
-        if (gub_pipeline_grab_frame(m_Instance, ref w, ref h))
+        if (gub_pipeline_grab_frame(m_Instance, ref w, ref h) == 1)
         {
             frameSize.x = w;
             frameSize.y = h;
@@ -133,9 +120,6 @@ public class GstUnityBridgePipeline
     public void BlitTexture(System.IntPtr _NativeTexturePtr, int _TextureWidth, int _TextureHeight)
     {
         if (_NativeTexturePtr == System.IntPtr.Zero) return;
-
-        Vector2 sz = FrameSize;
-        if (_TextureWidth != sz.x || _TextureHeight != sz.y) return;    // For now, only works if the texture has the exact same size as the webview.
 
         gub_pipeline_blit_image(m_Instance, _NativeTexturePtr, _TextureWidth, _TextureHeight);  // We pass Unity's width and height values of the texture
     }

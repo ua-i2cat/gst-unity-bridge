@@ -8,4 +8,6 @@
 
 #define EXPORT_API __declspec(dllexport)
 
+void gub_copy_texture(const char *data, int w, int h, void *_TextureNativePtr);
+
 #endif

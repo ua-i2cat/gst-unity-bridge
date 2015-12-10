@@ -17,6 +17,9 @@
     <ClCompile Include="gub_pipeline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gub_graphics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gub.h">

@@ -15,32 +15,32 @@ GMainLoop *gub_main_loop = NULL;
 
 gpointer gub_main_loop_func(gpointer data)
 {
-	fprintf(stdout, "GUB: Entering main loop");
+	fprintf(stdout, "GUB: Entering main loop\n");
 	gub_main_loop = g_main_loop_new(NULL, FALSE);
 	g_main_loop_run(gub_main_loop);
-	fprintf(stdout, "GUB: Quitting main loop");
+	fprintf(stdout, "GUB: Quitting main loop\n");
 
 	return NULL;
 }
 
 EXPORT_API void gub_ref()
 {
-	fprintf(stdout, "GUB: ref");
+	fprintf(stdout, "GUB: ref\n");
 	if (gub_ref_count == 0) {
 		GError *err = 0;
 
 		if (!gst_init_check(0, 0, &err)) {
-			fprintf(stderr, "GUB: Failed to initialize GStreamer: %s", err ? err->message : "<No error message>");
+			fprintf(stderr, "GUB: Failed to initialize GStreamer: %s\n", err ? err->message : "<No error message>");
 			return;
 		}
 
-		gub_main_loop_thread = g_thread_new("GstUnityBridge Main Thread", gub_main_loop_func, NULL);
+		gub_main_loop_thread = g_thread_new("GstUnityBridge Main Thread\n", gub_main_loop_func, NULL);
 		if (!gub_main_loop_thread) {
-			fprintf(stderr, "GUB: Failed to create GLib main thread: %s", err ? err->message : "<No error message>");
+			fprintf(stderr, "GUB: Failed to create GLib main thread: %s\n", err ? err->message : "<No error message>");
 			return;
 		}
 
-		fprintf(stdout, "GUB: GStreamer initialized");
+		fprintf(stdout, "GUB: GStreamer initialized\n");
 	}
 
 	gub_ref_count++;
@@ -48,9 +48,9 @@ EXPORT_API void gub_ref()
 
 EXPORT_API void gub_unref()
 {
-	fprintf(stdout, "GUB: unref");
+	fprintf(stdout, "GUB: unref\n");
 	if (gub_ref_count == 0) {
-		fprintf(stderr, "GUB: Trying to unref past zero");
+		fprintf(stderr, "GUB: Trying to unref past zero\n");
 		return;
 	}
 
@@ -69,6 +69,6 @@ EXPORT_API void gub_unref()
 
 EXPORT_API gint32 gub_is_active()
 {
-	fprintf(stdout, "GUB: is_active");
+	fprintf(stdout, "GUB: is_active\n");
 	return (gub_ref_count > 0);
 }
