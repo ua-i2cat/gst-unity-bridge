@@ -215,8 +215,9 @@ ModelManifest.xml
 # Android ndk-build
 gst-build-armeabi/
 libs/
+assets/
+src/org/
 build.xml
 local.properties
 proguard-project.txt
 project.properties
-
