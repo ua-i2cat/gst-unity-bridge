@@ -211,3 +211,12 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+
+# Android ndk-build
+gst-build-armeabi/
+libs/
+build.xml
+local.properties
+proguard-project.txt
+project.properties
+
