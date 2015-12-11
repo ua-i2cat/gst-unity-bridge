@@ -103,8 +103,11 @@ EXPORT_API void gub_ref()
 
 		gst_debug_remove_log_function (gst_debug_log_default);
 		gst_debug_add_log_function ((GstLogFunction) gst_debug_gub, NULL, NULL);
+
+#if defined (__ANDROID__)
 		gst_android_register_static_plugins ();
 		gst_android_load_gio_modules ();
+#endif
 
 		gub_main_loop_thread = g_thread_new("GstUnityBridge Main Thread", gub_main_loop_func, NULL);
 		if (!gub_main_loop_thread) {
