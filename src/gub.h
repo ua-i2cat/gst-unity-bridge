@@ -13,5 +13,6 @@
 #endif
 
 void gub_copy_texture(const char *data, int w, int h, void *_TextureNativePtr);
+void gub_log(const char *format, ...);
 
 #endif

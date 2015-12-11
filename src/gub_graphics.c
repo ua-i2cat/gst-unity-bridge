@@ -6,7 +6,6 @@
 #define SUPPORT_D3D9 1
 #define SUPPORT_D3D11 1
 #elif defined(__ANDROID__)
-#include <android/log.h>
 #define SUPPORT_EGL 1
 #endif
 
@@ -119,15 +118,15 @@ void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_textur
 
 void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
 {
-    __android_log_print (ANDROID_LOG_INFO, "gub", "Got texture ID %d", (GLuint)(size_t)native_texture_ptr);
+    gub_log("Got texture ID %d", (GLuint)(size_t)native_texture_ptr);
 	if (native_texture_ptr)
 	{
 		GLuint gltex = (GLuint)(size_t)(native_texture_ptr);
-        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+        gub_log("glGetError = %d", glGetError());
 		glBindTexture(GL_TEXTURE_2D, gltex);
-        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+		gub_log("glGetError = %d", glGetError());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
-        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+		gub_log("glGetError = %d", glGetError());
 	}
 }
 
@@ -150,27 +149,27 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 		{
 #if SUPPORT_D3D9
 		case kUnityGfxRendererD3D9:
-			fprintf(stdout, "Set D3D9 graphics device\n");
+			gub_log("Set D3D9 graphics device");
 			break;
 #endif
 #if SUPPORT_D3D11
 		case kUnityGfxRendererD3D11:
-			fprintf(stdout, "Set D3D11 graphics device\n");
+			gub_log("Set D3D11 graphics device");
 			break;
 #endif
 #if SUPPORT_OPENGL
 		case kUnityGfxRendererOpenGL:
-			fprintf(stdout, "Set OpenGL graphics device\n");
+			gub_log("Set OpenGL graphics device");
 			break;
 #endif
 #if SUPPORT_EGL
 		case kUnityGfxRendererOpenGLES20:
 		case kUnityGfxRendererOpenGLES30:
-            __android_log_print (ANDROID_LOG_INFO, "gub", "Set OpenGL-ES graphics device");
+			gub_log("Set OpenGL-ES graphics device");
 			break;
 #endif
 		default:
-			fprintf(stderr, "Unsupported graphic device %d\n", deviceType);
+			gub_log("Unsupported graphic device %d", deviceType);
 			break;
 		}
 		break;
@@ -199,7 +198,7 @@ void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 #if SUPPORT_EGL
 	case kUnityGfxRendererOpenGLES20:
 	case kUnityGfxRendererOpenGLES30:
-		__android_log_print(ANDROID_LOG_INFO, "gub", "copy_texture %dx%d", w, h);
+		gub_log("copy_texture %dx%d", w, h);
 		gub_copy_texture_EGL(data, w, h, native_texture_ptr);
 		break;
 #endif

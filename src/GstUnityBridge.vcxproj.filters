@@ -20,6 +20,9 @@
     <ClCompile Include="gub_graphics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gub_log.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gub.h">

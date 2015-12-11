@@ -58,7 +58,7 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 	GError *err = NULL;
 	pipeline->pipeline = gst_parse_launch(pipeline_description, &err);
 	if (err) {
-		fprintf(stderr, "GUB: Failed to create pipeline: %s\n", err->message);
+		gub_log("Failed to create pipeline: %s", err->message);
 		return;
 	}
 	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
@@ -76,19 +76,19 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	}
 
 	if (!sink) {
-		fprintf(stderr, "GUB: Pipeline does not contain a sink named 'sink'\n");
+		gub_log("Pipeline does not contain a sink named 'sink'");
 		return 0;
 	}
 
 	g_object_get(sink, "last-sample", &pipeline->last_sample, NULL);
 	if (!pipeline->last_sample) {
-		fprintf(stderr, "GUB: Could not read property 'last-sample' from sink\n");
+		gub_log("Could not read property 'last-sample' from sink");
 		return 0;
 	}
 
 	last_caps = gst_sample_get_caps(pipeline->last_sample);
 	if (!last_caps) {
-		fprintf(stderr, "GUB: Sample contains no caps\n");
+		gub_log("Sample contains no caps");
 		gst_sample_unref(pipeline->last_sample);
 		pipeline->last_sample = NULL;
 		return 0;
@@ -98,7 +98,7 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 	if (info.finfo->format != GST_VIDEO_FORMAT_RGB ||
 		info.finfo->bits != 8) {
-		fprintf(stderr, "GUB: BUffer format is not RGB24\n");
+		gub_log("Buffer format is not RGB24");
 		gst_sample_unref(pipeline->last_sample);
 		pipeline->last_sample = NULL;
 		return 0;
@@ -122,7 +122,7 @@ EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNat
 
 	last_buffer = gst_sample_get_buffer(pipeline->last_sample);
 	if (!last_buffer) {
-		fprintf(stderr, "GUB: Sample contains no buffer\n");
+		gub_log("Sample contains no buffer");
 		gst_sample_unref(pipeline->last_sample);
 		pipeline->last_sample = NULL;
 		return;
