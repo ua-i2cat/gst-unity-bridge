@@ -123,15 +123,11 @@ void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_textur
 
 void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
 {
-    gub_log("Got texture ID %d", (GLuint)(size_t)native_texture_ptr);
 	if (native_texture_ptr)
 	{
 		GLuint gltex = (GLuint)(size_t)(native_texture_ptr);
-        gub_log("glGetError = %d", glGetError());
 		glBindTexture(GL_TEXTURE_2D, gltex);
-		gub_log("glGetError = %d", glGetError());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
-		gub_log("glGetError = %d", glGetError());
 	}
 }
 
@@ -203,7 +199,6 @@ void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 #if SUPPORT_EGL
 	case kUnityGfxRendererOpenGLES20:
 	case kUnityGfxRendererOpenGLES30:
-		gub_log("copy_texture %dx%d", w, h);
 		gub_copy_texture_EGL(data, w, h, native_texture_ptr);
 		break;
 #endif
