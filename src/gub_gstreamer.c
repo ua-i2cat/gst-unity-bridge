@@ -107,6 +107,8 @@ EXPORT_API void gub_ref()
 
 		gst_debug_remove_log_function(gst_debug_log_default);
 		gst_debug_add_log_function((GstLogFunction)gst_debug_gub, NULL, NULL);
+		gst_debug_set_active(TRUE);
+		gst_debug_set_default_threshold(GST_LEVEL_WARNING);
 
 #if defined (__ANDROID__)
 		gst_android_register_static_plugins();
