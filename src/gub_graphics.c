@@ -179,7 +179,6 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 
 void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 {
-    __android_log_print (ANDROID_LOG_INFO, "gub", "copy_texture %dx%d", w, h);
 	switch (gub_renderer)
 	{
 #if SUPPORT_D3D9
@@ -200,6 +199,7 @@ void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 #if SUPPORT_EGL
 	case kUnityGfxRendererOpenGLES20:
 	case kUnityGfxRendererOpenGLES30:
+		__android_log_print(ANDROID_LOG_INFO, "gub", "copy_texture %dx%d", w, h);
 		gub_copy_texture_EGL(data, w, h, native_texture_ptr);
 		break;
 #endif
