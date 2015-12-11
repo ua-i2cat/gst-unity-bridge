@@ -34,6 +34,9 @@ EXPORT_API void gub_ref()
 			return;
 		}
 
+		gst_android_register_static_plugins ();
+		gst_android_load_gio_modules ();
+
 		gub_main_loop_thread = g_thread_new("GstUnityBridge Main Thread", gub_main_loop_func, NULL);
 		if (!gub_main_loop_thread) {
 			gub_log("Failed to create GLib main thread: %s", err ? err->message : "<No error message>");

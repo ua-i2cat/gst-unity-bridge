@@ -5,7 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := GstUnityBridge
 LOCAL_SRC_FILES := ../src/gub_graphics.c ../src/gub_gstreamer.c ../src/gub_pipeline.c ../src/gub_log.c
 LOCAL_SHARED_LIBRARIES := gstreamer_android
-LOCAL_LDLIBS := -llog -lGLESv2
+LOCAL_LDLIBS := -llog -landroid -lGLESv2
 include $(BUILD_SHARED_LIBRARY)
 
 ifndef GSTREAMER_ROOT
