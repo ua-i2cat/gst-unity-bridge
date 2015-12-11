@@ -1,10 +1,13 @@
 #include "gub.h"
 #include <stdio.h>
 
-#if _WIN32
+#if defined(_WIN32)
 #define SUPPORT_OPENGL 1
 #define SUPPORT_D3D9 1
 #define SUPPORT_D3D11 1
+#elif defined(__ANDROID__)
+#include <android/log.h>
+#define SUPPORT_EGL 1
 #endif
 
 /* Copied from IUnityGraphics.h */
@@ -110,6 +113,27 @@ void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_textur
 
 #endif
 
+#if SUPPORT_EGL
+// ----------------- OPENGL-ES SUPPORT -----------------
+#include <GLES/gl.h>
+
+void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
+{
+    __android_log_print (ANDROID_LOG_INFO, "gub", "Got texture ID %d", (GLuint)(size_t)native_texture_ptr);
+	if (native_texture_ptr)
+	{
+		GLuint gltex = (GLuint)(size_t)(native_texture_ptr);
+        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+		glBindTexture(GL_TEXTURE_2D, gltex);
+        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+        __android_log_print (ANDROID_LOG_INFO, "gub", "glGetError = %d", glGetError());
+	}
+}
+
+#endif
+
+
 // ----------------- UNITY INTEGRATION -----------------
 // If exported by a plugin, this function will be called when graphics device is created, destroyed,
 // and before and after it is reset (ie, resolution changed).
@@ -139,6 +163,12 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 			fprintf(stdout, "Set OpenGL graphics device\n");
 			break;
 #endif
+#if SUPPORT_EGL
+		case kUnityGfxRendererOpenGLES20:
+		case kUnityGfxRendererOpenGLES30:
+            __android_log_print (ANDROID_LOG_INFO, "gub", "Set OpenGL-ES graphics device");
+			break;
+#endif
 		default:
 			fprintf(stderr, "Unsupported graphic device %d\n", deviceType);
 			break;
@@ -149,6 +179,7 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 
 void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 {
+    __android_log_print (ANDROID_LOG_INFO, "gub", "copy_texture %dx%d", w, h);
 	switch (gub_renderer)
 	{
 #if SUPPORT_D3D9
@@ -164,6 +195,12 @@ void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 #if SUPPORT_OPENGL
 	case kUnityGfxRendererOpenGL:
 		gub_copy_texture_OpenGL(data, w, h, native_texture_ptr);
+		break;
+#endif
+#if SUPPORT_EGL
+	case kUnityGfxRendererOpenGLES20:
+	case kUnityGfxRendererOpenGLES30:
+		gub_copy_texture_EGL(data, w, h, native_texture_ptr);
 		break;
 #endif
 	default:
