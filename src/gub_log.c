@@ -26,6 +26,7 @@ void gub_log(const char *format, ...)
 #else
 
 #include <android/log.h>
+#include <gst/gst.h>
 
 void gub_log(const char *format, ...)
 {
@@ -33,7 +34,7 @@ void gub_log(const char *format, ...)
 	gchar *msg;
 	va_start(args, format);
 	msg = g_strdup_vprintf(format, args);
-	__android_log_print(ANDROID_LOG_INFO, "gub", msg);
+	__android_log_print(ANDROID_LOG_INFO, "gub", "%s", msg);
 	g_free(msg);
 	va_end(args);
 }
