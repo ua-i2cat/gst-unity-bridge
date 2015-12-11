@@ -1,9 +1,9 @@
 ﻿/*
  * GStreamer - Unity3D bridge.
- * Based on https://github.com/mrayy/mrayGStreamerUnity
+ * (C) 2015 i2CAT
  */
 
-using UnityEngine;
+ using UnityEngine;
 
 public class GstUnityBridgeTexture : MonoBehaviour
 {

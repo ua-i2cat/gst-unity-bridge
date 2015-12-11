@@ -1,7 +1,7 @@
 /*
-* GStreamer - Unity3D bridge.
-* Based on https://github.com/mrayy/mrayGStreamerUnity
-*/
+ * GStreamer - Unity3D bridge.
+ * (C) 2015 i2CAT
+ */
 
 #ifndef __GUB_H__
 #define __GUB_H__

@@ -1,3 +1,8 @@
+/*
+ * GStreamer - Unity3D bridge.
+ * (C) 2015 i2CAT
+ */
+
 #include "gub.h"
 #include <stdio.h>
 
