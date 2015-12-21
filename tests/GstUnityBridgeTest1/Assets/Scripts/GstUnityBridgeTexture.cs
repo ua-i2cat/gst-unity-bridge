@@ -91,7 +91,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_PipelineDescription = _PipelineDescription;
         if (m_Pipeline.IsLoaded || m_Pipeline.IsPlaying)
             m_Pipeline.Close();
-        m_Pipeline.Setup(m_PipelineDescription);
+        m_Pipeline.Setup(m_PipelineDescription, m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
     }
 
     public void Destroy()

@@ -5,6 +5,7 @@
 
 #include <gst/gst.h>
 #include <gst/video/video.h>
+#include <gst/net/gstnet.h>
 #include <memory.h>
 #include <stdio.h>
 #include "gub.h"
@@ -14,6 +15,7 @@ typedef struct _GUBPipeline {
 	GstSample *last_sample;
 	int last_width;
 	int last_height;
+	GstClock *net_clock;
 } GUBPipeline;
 
 EXPORT_API GUBPipeline *gub_pipeline_create()
@@ -53,14 +55,33 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
 {
 }
 
-EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description)
+EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description, const gchar *net_clock_addr, int net_clock_port)
 {
 	GError *err = NULL;
+
 	pipeline->pipeline = gst_parse_launch(pipeline_description, &err);
 	if (err) {
 		gub_log("Failed to create pipeline: %s", err->message);
 		return;
 	}
+
+	if (net_clock_addr != NULL) {
+		gint64 start, stop;
+		gub_log("Trying to synchronize to network clock at %s %d", net_clock_addr, net_clock_port);
+		pipeline->net_clock = gst_net_client_clock_new("net_clock", net_clock_addr, net_clock_port, 0);
+		if (!pipeline->net_clock) {
+			gub_log("Could not create network clock at %s %d", net_clock_addr, net_clock_port);
+			return;
+		}
+
+		start = g_get_monotonic_time();
+		gst_clock_wait_for_sync(pipeline->net_clock, GST_CLOCK_TIME_NONE);
+		stop = g_get_monotonic_time();
+		gub_log("Synchronized to network clock in %g seconds", (stop - start) / 1e6);
+
+		gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
+	}
+
 	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 }
 
