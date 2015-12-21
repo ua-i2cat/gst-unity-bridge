@@ -1,20 +1,20 @@
 ﻿/*
  * GStreamer - Unity3D bridge.
- * Based on https://github.com/mrayy/mrayGStreamerUnity
+ * (C) 2015 i2CAT
  */
 
-using UnityEngine;
+ using UnityEngine;
 
 public class GstUnityBridgeTexture : MonoBehaviour
 {
-    public int m_Width = 64;
-    public int m_Height = 64;
     public bool m_FlipX = false;
     public bool m_FlipY = false;
     public string m_PipelineDescription = "videotestsrc ! appsink name=sink";
 
     private GstUnityBridgePipeline m_Pipeline;
     private Texture2D m_Texture = null;
+    private int m_Width = 64;
+    private int m_Height = 64;
 
     [SerializeField]
     private bool m_InitializeOnStart = true;
