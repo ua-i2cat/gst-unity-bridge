@@ -5,20 +5,32 @@
 
  using UnityEngine;
 
+[DisallowMultipleComponent]
 public class GstUnityBridgeTexture : MonoBehaviour
 {
     public bool m_FlipX = false;
     public bool m_FlipY = false;
+    [TextArea(1,8)]
+    [Tooltip("Valid GStreamer pipeline ending with a fakesink named 'sink'")]
     public string m_PipelineDescription = "videotestsrc ! appsink name=sink";
+
+    [SerializeField]
+    [Tooltip("Leave alway ON, unless you plan to activate it manually")]
+    private bool m_InitializeOnStart = true;
+    private bool m_HasBeenInitialized = false;
+
+    [Header("Network synchronization")]
+    [Tooltip("If unchecked, next two items are unused")]
+    public bool m_UseNetworkSynchronization = false;
+    [Tooltip("IP address or host name of the clock provider")]
+    public string m_ClockAddress = "";
+    [Tooltip("Port of the clock provider")]
+    public int m_ClockPort = 0;
 
     private GstUnityBridgePipeline m_Pipeline;
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
-
-    [SerializeField]
-    private bool m_InitializeOnStart = true;
-    private bool m_HasBeenInitialized = false;
 
     public void Initialize()
     {
