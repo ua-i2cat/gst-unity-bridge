@@ -125,6 +125,15 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 		return 0;
 	}
 
+#if 0
+	if (pipeline->net_clock) {
+		GstBuffer *buff = gst_sample_get_buffer(pipeline->last_sample);
+		GstClockTime pts = GST_BUFFER_PTS(buff);
+		GstClockTime curr = gst_clock_get_time(pipeline->net_clock) - gst_element_get_base_time(pipeline->pipeline);
+		gub_log("Buffer PTS is %" GST_TIME_FORMAT " and current is %" GST_TIME_FORMAT, GST_TIME_ARGS(pts), GST_TIME_ARGS(curr));
+	}
+#endif
+
 	pipeline->last_width = *width = info.width;
 	pipeline->last_height = *height = info.height;
 
