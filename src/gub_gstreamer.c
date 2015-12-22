@@ -76,7 +76,7 @@ static void gst_debug_gub(GstDebugCategory * category, GstDebugLevel level,
 		}
 
 		gub_log(
-			"%" GST_TIME_FORMAT " %p %s %s %s:%d:%s:%s %s\n",
+			"%" GST_TIME_FORMAT " %p %s %s %s:%d:%s:%s %s",
 			GST_TIME_ARGS(elapsed), g_thread_self(), level_str, tag,
 			file, line, function, obj, gst_debug_message_get(message));
 
@@ -84,7 +84,7 @@ static void gst_debug_gub(GstDebugCategory * category, GstDebugLevel level,
 	}
 	else {
 		gub_log(
-			"%" GST_TIME_FORMAT " %p %s %s %s:%d:%s %s\n",
+			"%" GST_TIME_FORMAT " %p %s %s %s:%d:%s %s",
 			GST_TIME_ARGS(elapsed), g_thread_self(), level_str, tag,
 			file, line, function, gst_debug_message_get(message));
 	}
