@@ -65,6 +65,7 @@ static void source_created(GstElement *pipe, GstElement *source)
 	g_object_set(source, "ntp-time-source", 3, NULL);
 	g_object_set(source, "buffer-mode", 4, NULL);
 	g_object_set(source, "ntp-sync", TRUE, NULL);
+//	g_object_set(source, "protocols", 4, NULL);
 }
 
 EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description, const gchar *net_clock_addr, int net_clock_port)
@@ -96,9 +97,13 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		}
 
 		start = g_get_monotonic_time();
-		gst_clock_wait_for_sync(pipeline->net_clock, GST_CLOCK_TIME_NONE);
+		gst_clock_wait_for_sync(pipeline->net_clock, 30 * GST_SECOND);
 		stop = g_get_monotonic_time();
-		gub_log("Synchronized to network clock in %g seconds", (stop - start) / 1e6);
+		if (gst_clock_is_synced(pipeline->net_clock)) {
+			gub_log("Synchronized to network clock in %g seconds", (stop - start) / 1e6);
+		} else {
+			gub_log("Could not synchronize to network clock after %g seconds", (stop - start) / 1e6);
+		}
 
 		gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
 		gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
