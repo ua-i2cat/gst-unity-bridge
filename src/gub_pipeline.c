@@ -10,7 +10,8 @@
 #include <stdio.h>
 #include "gub.h"
 
-#define PLAYBACK_DELAY_MS 40
+#define MAX_JITTERBUFFER_DELAY_MS 40
+#define MAX_PIPELINE_DELAY_MS 500
 
 typedef struct _GUBPipeline {
 	GstElement *pipeline;
@@ -60,7 +61,7 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
 static void source_created(GstElement *pipe, GstElement *source)
 {
 	gub_log("Setting properties to source %s", gst_plugin_feature_get_name(gst_element_get_factory(source)));
-	g_object_set(source, "latency", PLAYBACK_DELAY_MS, NULL);
+	g_object_set(source, "latency", MAX_JITTERBUFFER_DELAY_MS, NULL);
 	g_object_set(source, "ntp-time-source", 3, NULL);
 	g_object_set(source, "buffer-mode", 4, NULL);
 	g_object_set(source, "ntp-sync", TRUE, NULL);
@@ -100,6 +101,7 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		gub_log("Synchronized to network clock in %g seconds", (stop - start) / 1e6);
 
 		gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
+		gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
 	}
 
 	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
