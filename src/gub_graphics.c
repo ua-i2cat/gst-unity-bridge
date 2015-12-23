@@ -12,6 +12,8 @@
 #define SUPPORT_D3D11 1
 #elif defined(__ANDROID__)
 #define SUPPORT_EGL 1
+#else
+#define SUPPORT_OPENGL 1
 #endif
 
 /* Copied from IUnityGraphics.h */
@@ -99,11 +101,7 @@ void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_texture
 
 #if SUPPORT_OPENGL
 // ----------------- DESKTOP OPENGL SUPPORT -----------------
-#if _WIN32
-#include <gl/GL.h>
-#else
-#include <OpenGL/OpenGL.h>
-#endif
+#include <GL/gl.h>
 
 void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_texture_ptr)
 {
