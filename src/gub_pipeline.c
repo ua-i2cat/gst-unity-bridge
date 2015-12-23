@@ -102,6 +102,7 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	}
 
 	g_object_get(sink, "last-sample", &pipeline->last_sample, NULL);
+	gst_object_unref(sink);
 	if (!pipeline->last_sample) {
 		gub_log("Could not read property 'last-sample' from sink");
 		return 0;
