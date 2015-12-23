@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include "gub.h"
 
+#define PLAYBACK_DELAY_MS 40
+
 typedef struct _GUBPipeline {
 	GstElement *pipeline;
 	GstSample *last_sample;
@@ -55,15 +57,33 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
 {
 }
 
+static void source_created(GstElement *pipe, GstElement *source)
+{
+	gub_log("Setting properties to source %s", gst_plugin_feature_get_name(gst_element_get_factory(source)));
+	g_object_set(source, "latency", PLAYBACK_DELAY_MS, NULL);
+	g_object_set(source, "ntp-time-source", 3, NULL);
+	g_object_set(source, "buffer-mode", 4, NULL);
+	g_object_set(source, "ntp-sync", TRUE, NULL);
+}
+
 EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description, const gchar *net_clock_addr, int net_clock_port)
 {
 	GError *err = NULL;
+	GstElement *source;
 
 	pipeline->pipeline = gst_parse_launch(pipeline_description, &err);
 	if (err) {
 		gub_log("Failed to create pipeline: %s", err->message);
 		return;
 	}
+
+	source = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "source");
+	if (!source) {
+		gub_log("Pipeline does not contain a source named 'source'");
+		return;
+	}
+	g_signal_connect(source, "source-setup", G_CALLBACK(source_created), NULL);
+	gst_object_unref(source);
 
 	if (net_clock_addr != NULL) {
 		gint64 start, stop;
