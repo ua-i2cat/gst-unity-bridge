@@ -20,22 +20,22 @@ The easiest path is probably to copy the contents of the `Assets\Plugins` and `A
 Then, from within the Unity editor, drag the `GstUnityBridgeTexture` script onto your object (disregard the other scripts).
 
 A number of properties are available:
-- **FlipX**: Invert texture horizontally
-- **FlipY**: Invert texture vertically
-- **Pipeline Description**: The most important piece of setup. A GStreamer pipeline description must be provided, in [gst-launch format](http://docs.gstreamer.com/display/GstSDK/gst-launch). 
+  - **FlipX**: Invert texture horizontally
+  - **FlipY**: Invert texture vertically
+  - **Pipeline Description**: The most important piece of setup. A GStreamer pipeline description must be provided, in [gst-launch format](http://docs.gstreamer.com/display/GstSDK/gst-launch). 
 The pipeline description must have an element named `sink` which must have a property named `last-frame`.
 When Unity asks for a texture update, the last frame is taken from that element and passed onto Unity.
 `fakesink` works perfectly well for this purpose.
-- **Initialize On Start**: Whether the GStreamer pipeline must be created and set to PLAYING when the scene is loaded. Leave this on unless you plan to activate the pipeline manually.
+  - **Initialize On Start**: Whether the GStreamer pipeline must be created and set to PLAYING when the scene is loaded. Leave this on unless you plan to activate the pipeline manually.
 
 More properties are available, related to network sycnhronization, detailed below.
 
 ### Network clock synchronization
 
 When enabled, will synchronize the GStreamer pipeline to a GStreamer network clock. This allows synchronized playback across multiple devices. The clock server address and port must be provided through properties:
-- **Use Network Synchronization**: Enable network clock usage. If unchecked, the following two properties are ignored.
-- **Clock Address**: Server address (IP or host name) of the clock provider.
-- **Clock Port**: Port where the clock is provided.
+  - **Use Network Synchronization**: Enable network clock usage. If unchecked, the following two properties are ignored.
+  - **Clock Address**: Server address (IP or host name) of the clock provider.
+  - **Clock Port**: Port where the clock is provided.
 
 The easiest way to provide a network stream **and** and clock is through the [gst-rtsp-server](http://cgit.freedesktop.org/gstreamer/gst-rtsp-server/) example `test-netclock`. For example:
 
