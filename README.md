@@ -31,6 +31,13 @@ When Unity asks for a texture update, the last frame is taken from that element 
 
 More properties are available, related to network sycnhronization, detailed below.
 
+### Sample pipeline:
+To read a stream from any uri. GStreamer understands a wide range of formats and protocols. This pipeline is also generic enough that works on Windows, Linux and Android.
+
+```
+uridecodebin uri="PROTOCOL://SOME.SERVER/ADDRESS" name=s ! queue ! videoconvert ! video/x-raw,format=RGB ! fakesink sync=1 name=sink s. ! queue ! audioconvert ! audioresample ! autoaudiosink
+```
+
 ### Network clock synchronization
 
 When enabled, will synchronize the GStreamer pipeline to a GStreamer network clock. This allows synchronized playback across multiple devices. The clock server address and port must be provided through properties:
@@ -57,7 +64,7 @@ uridecodebin uri="rtsp://127.0.0.1:8554/test" name=s ! queue ! videoconvert ! vi
 
 **Clock Port**: `8554`
 
-# 2. Building the native plugin
+## 2. Building the native plugin
 It is easier to use the prebuilt binaries included in the test project. However, should you need to build your own native plugin, use these instructions.
 
 ## Building the plugin for Windows
@@ -81,3 +88,7 @@ No facilities are given yet (no Makefiles), but this has worked in the past:
 ```
 gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 gstreamer-net-1.0 gstreamer-video-1.0` *.c -o libGstUnityBridge.so
 ```
+
+## 3. TODO
+
+- Avoid copying frames from and to main memory when a hardware decoder is being used.
