@@ -67,10 +67,10 @@ uridecodebin uri="rtsp://127.0.0.1:8554/test" name=s ! queue ! videoconvert ! vi
 ## 2. Building the native plugin
 It is easier to use the prebuilt binaries included in the test project. However, should you need to build your own native plugin, use these instructions.
 
-## Building the plugin for Windows
+### Building the plugin for Windows
 Solution and Project files are included for Visual Studio 2015. Just open and build. Make sure the latest [GStreamer 1.0 SDK](http://gstreamer.freedesktop.org/data/pkg/windows/) is installed and the `GSTREAMER_1_0_ROOT_X86` or `GSTREAMER_1_0_ROOT_X86_64` environment variable is defined and points to the proper place. Copy the resulting `GstUnityBridge.dll` to the `Assets\Plugins` folder of your Unity project.
 
-## Building the plugin for Android
+### Building the plugin for Android
 Take this into account: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 
 Then, the usual:
@@ -82,7 +82,7 @@ ndk-build
 
 No need to go further in the build process, two libraries are already available in the `libs` folder: `libgstreamer_android.so` and `libGstUnityBridge.so`. Both must be copied to the `Assets\Plugins` folder of your Unity project.
 
-## Building the plugin for Linux
+### Building the plugin for Linux
 No facilities are given yet (no Makefiles), but this has worked in the past:
 
 ```
@@ -91,4 +91,4 @@ gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 g
 
 ## 3. TODO
 
-- Avoid copying frames from and to main memory when a hardware decoder is being used.
+- Avoid copying frames from and to main memory when a hardware decoder is being used. On a Samsung Galaxy S3, the sample project consumes about 75% of CPU.
