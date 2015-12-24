@@ -45,11 +45,17 @@ The easiest way to provide a network stream **and** and clock is through the [gs
 ./test-netclock "( filesrc location=~/sintel-1024-surround.mp4 ! qtdemux name=d ! queue ! rtph264pay name=pay0 pt=96 d. ! queue ! rtpmp4apay name=pay1 pt=96 )"
 ```
 
-This will create an RTSP stream at `rtsp://127.0.0.1:8554`. Then add this on the pipeline description inside Unity:
+This will create an RTSP stream at `rtsp://127.0.0.1:8554`. Then add these properties to your object inside Unity:
+
+**Pipeline Description**:
 
 ```
 uridecodebin uri="rtsp://127.0.0.1:8554/test" name=s ! queue ! videoconvert ! video/x-raw,format=RGB ! fakesink sync=1 name=sink s. ! queue ! audioconvert ! audioresample ! autoaudiosink
 ```
+
+**Clock Address**: `127.0.0.1`
+
+**Clock Port**: `8554`
 
 # 2. Building the native plugin
 It is easier to use the prebuilt binaries included in the test project. However, should you need to build your own native plugin, use these instructions.
