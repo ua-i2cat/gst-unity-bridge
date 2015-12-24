@@ -38,10 +38,13 @@ When enabled, will synchronize the GStreamer pipeline to a GStreamer network clo
 - **Clock Port**: Port where the clock is provided.
 
 The easiest way to provide a network stream **and** and clock is through the [gst-rtsp-server](http://cgit.freedesktop.org/gstreamer/gst-rtsp-server/) example `test-netclock`. For example:
+
 ```
 ./test-netclock "( filesrc location=~/sintel-1024-surround.mp4 ! qtdemux name=d ! queue ! rtph264pay name=pay0 pt=96 d. ! queue ! rtpmp4apay name=pay1 pt=96 )"
 ```
+
 This will create an RTSP stream at `rtsp://127.0.0.1:8554`. Then add this on the pipeline description inside Unity:
+
 ```
 uridecodebin uri="rtsp://127.0.0.1:8554/test" name=s ! queue ! videoconvert ! video/x-raw,format=RGB ! fakesink sync=1 name=sink s. ! queue ! audioconvert ! audioresample ! autoaudiosink
 ```
@@ -56,14 +59,17 @@ Solution and Project files are included for Visual Studio 2015. Just open and bu
 Take this into account: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 
 Then, the usual:
+
 ```
 android update project -p . -s --target android-23
 ndk-build
 ```
+
 No need to go further in the build process, two libraries are already available in the `libs` folder: `libgstreamer_android.so` and `libGstUnityBridge.so`. Both must be copied to the `Assets\Plugins` folder of your Unity project.
 
 ## Building the plugin for Linux
 No facilities are given yet (no Makefiles), but this has worked in the past:
+
 ```
 gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 gstreamer-net-1.0 gstreamer-video-1.0` *.c -o libGstUnityBridge.so
 ```
