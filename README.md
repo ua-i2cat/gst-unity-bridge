@@ -20,6 +20,7 @@ The easiest path is probably to copy the contents of the `Assets\Plugins` and `A
 Then, from within the Unity editor, drag the `GstUnityBridgeTexture` script onto your object (disregard the other scripts).
 
 A number of properties are available:
+
   - **FlipX**: Invert texture horizontally
   - **FlipY**: Invert texture vertically
   - **Pipeline Description**: The most important piece of setup. A GStreamer pipeline description must be provided, in [gst-launch format](http://docs.gstreamer.com/display/GstSDK/gst-launch). 
@@ -33,6 +34,7 @@ More properties are available, related to network sycnhronization, detailed belo
 ### Network clock synchronization
 
 When enabled, will synchronize the GStreamer pipeline to a GStreamer network clock. This allows synchronized playback across multiple devices. The clock server address and port must be provided through properties:
+
   - **Use Network Synchronization**: Enable network clock usage. If unchecked, the following two properties are ignored.
   - **Clock Address**: Server address (IP or host name) of the clock provider.
   - **Clock Port**: Port where the clock is provided.
