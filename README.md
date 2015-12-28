@@ -89,6 +89,12 @@ No facilities are given yet (no Makefiles), but this has worked in the past:
 gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 gstreamer-net-1.0 gstreamer-video-1.0` *.c -o libGstUnityBridge.so
 ```
 
-## 3. TODO
+## 3. Known issues
 
-- Avoid copying frames from and to main memory when a hardware decoder is being used. On a Samsung Galaxy S3, the sample project consumes about 75% of CPU.
+- Frame data is extracted from GStreamer into main memory and passed onto Unity. On platforms like Android, where both video decoding and rendering are probably happening on the GPU, this is an enormous waste of time (On a Samsung Galaxy S3, the sample project consumes about 75% of CPU).
+- Due to some unknown issue with the Android GStreamer audio sink, its presence breaks network synchronization.
+
+## 4. TODO
+
+- Avoid copying frames from and to main memory when a hardware decoder is being used.
+- Fix network synchronization on Android when audio is rendered.
