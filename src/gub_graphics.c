@@ -176,7 +176,7 @@ static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, const char *dat
 static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline)
 {
 	GUBGraphicContextOpenGL *gcontext = NULL;
-	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
+	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_ANY);
 	if (raw_context) {
 		GstStructure *s;
 		GstGLDisplay *display = gst_gl_display_new();
@@ -201,8 +201,12 @@ static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline
 
 static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext)
 {
-	gst_object_unref(gcontext->display);
-	free(gcontext);
+	if (gcontext) {
+		if (gcontext->display) {
+			gst_object_unref(gcontext->display);
+		}
+		free(gcontext);
+	}
 }
 
 GUBGraphicBackend gub_graphic_backend_opengl = {
