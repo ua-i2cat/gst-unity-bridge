@@ -99,7 +99,7 @@ GUBGraphicBackend gub_graphic_backend_d3d9 = {
 	/* destroy_graphic_device  */ NULL,
 	/* create_graphic_context  */ NULL,
 	/* destroy_graphic_context */ NULL,
-	/* copy_texture */            gub_copy_texture_d3d9
+	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_d3d9
 };
 
 #endif
@@ -142,11 +142,11 @@ static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d11 = {
-	/* create_graphic_device   */ gub_create_graphic_device_d3d11,
-	/* destroy_graphic_device  */ gub_destroy_graphic_device_d3d11,
+	/* create_graphic_device   */ (GUBCreateGraphicDevicePFN)gub_create_graphic_device_d3d11,
+	/* destroy_graphic_device  */ (GUBDestroyGraphicDevicePFN)gub_destroy_graphic_device_d3d11,
 	/* create_graphic_context  */ NULL,
 	/* destroy_graphic_context */ NULL,
-	/* copy_texture */            gub_copy_texture_d3d11
+	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_d3d11
 };
 
 #endif
@@ -208,9 +208,9 @@ static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext
 GUBGraphicBackend gub_graphic_backend_opengl = {
 	/* create_graphic_device   */ NULL,
 	/* destroy_graphic_device  */ NULL,
-	/* create_graphic_context  */ gub_create_graphic_context_opengl,
-	/* destroy_graphic_context */ gub_destroy_graphic_context_opengl,
-	/* copy_texture */            gub_copy_texture_opengl
+	/* create_graphic_context  */ (GUBCreateGraphicContextPFN)gub_create_graphic_context_opengl,
+	/* destroy_graphic_context */ (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_opengl,
+	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_opengl
 };
 
 #endif

@@ -73,6 +73,8 @@ Solution and Project files are included for Visual Studio 2015. Just open and bu
 ### Building the plugin for Android
 Take this into account: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 
+Also, in $PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h, make sure GST_GL_HAVE_GLSYNC is defined to 1
+
 Then, the usual:
 
 ```
