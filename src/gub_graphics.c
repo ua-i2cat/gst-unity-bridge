@@ -227,7 +227,11 @@ GUBGraphicBackend gub_graphic_backend_opengl = {
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gstglcontext.h>
 
-static void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
+typedef struct _GUBGraphicContextEGL {
+	GstGLDisplay *display;
+} GUBGraphicContextEGL;
+
+static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, const char *data, int w, int h, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
@@ -237,22 +241,49 @@ static void gub_copy_texture_EGL(const char *data, int w, int h, void *native_te
 	}
 }
 
-static void gub_set_graphic_context_EGL(GstElement *pipeline)
+static GUBGraphicContext *gub_create_graphic_context_egl(GstElement *pipeline)
 {
-	GstGLContext *gl_context = GST_GL_CONTEXT(gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_ANY));
-	if (gl_context) {
+	GUBGraphicContextEGL *gcontext = NULL;
+	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
+	if (raw_context) {
 		GstStructure *s;
+		GstGLDisplay *display = gst_gl_display_new();
+		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_OPENGL);
 		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
+		gub_log("Current GL context is %p", raw_context);
 		s = gst_context_writable_structure(context);
 		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
 		gst_element_set_context(pipeline, context);
 		gst_context_unref(context);
-		gub_log("Set GL context. Display type is %d", gl_context->display->type);
+		gub_log("Set GL context. Display type is %p", gl_context->display->type);
+
+		gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
+		gcontext->display = display;
 	}
 	else {
-		gub_log("Could not retrieve current GL context");
+		gub_log("Could not retrieve current EGL context");
+	}
+
+	return gcontext;
+}
+
+static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
+{
+	if (gcontext) {
+		if (gcontext->display) {
+			gst_object_unref(gcontext->display);
+		}
+		free(gcontext);
 	}
 }
+
+GUBGraphicBackend gub_graphic_backend_egl = {
+	/* create_graphic_device   */ NULL,
+	/* destroy_graphic_device  */ NULL,
+	/* create_graphic_context  */ (GUBCreateGraphicContextPFN)gub_create_graphic_context_egl,
+	/* destroy_graphic_context */ (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_egl,
+	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_egl
+};
 
 #endif
 
@@ -319,6 +350,7 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 #if SUPPORT_EGL
 		case kUnityGfxRendererOpenGLES20:
 		case kUnityGfxRendererOpenGLES30:
+			gub_graphic_backend = &gub_graphic_backend_egl;
 			gub_log("Set OpenGL-ES graphics device");
 			break;
 #endif
