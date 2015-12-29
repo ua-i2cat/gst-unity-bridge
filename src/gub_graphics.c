@@ -46,7 +46,7 @@ static UnityGfxRenderer gub_renderer = -1;
 static void *gub_device = NULL;
 
 // Add alpha channel, OMFG
-void gub_add_alpha_channel(const char *src, char *dst, int size)
+static void gub_add_alpha_channel(const char *src, char *dst, int size)
 {
 	int i;
 	for (i = 0; i < size; i++) {
@@ -61,7 +61,7 @@ void gub_add_alpha_channel(const char *src, char *dst, int size)
 // ----------------- D3D9 SUPPORT -----------------
 #include <d3d9.h>
 
-void gub_copy_texture_D3D9(const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_D3D9(const char *data, int w, int h, void *native_texture_ptr)
 {
 	IDirect3DDevice9* device = (IDirect3DDevice9*)gub_device;
 	if (native_texture_ptr)
@@ -82,7 +82,7 @@ void gub_copy_texture_D3D9(const char *data, int w, int h, void *native_texture_
 // ----------------- D3D11 SUPPORT -----------------
 #include <d3d11.h>
 
-void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_texture_ptr)
 {
 	ID3D11Device* device = (ID3D11Device*)gub_device;
 	ID3D11DeviceContext* ctx = NULL;
@@ -103,7 +103,7 @@ void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_texture
 // ----------------- DESKTOP OPENGL SUPPORT -----------------
 #include <GL/gl.h>
 
-void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
@@ -119,7 +119,7 @@ void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_textur
 // ----------------- OPENGL-ES SUPPORT -----------------
 #include <GLES/gl.h>
 
-void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
