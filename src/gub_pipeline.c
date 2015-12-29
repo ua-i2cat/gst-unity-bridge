@@ -14,6 +14,8 @@
 #define MAX_PIPELINE_DELAY_MS 500
 
 typedef struct _GUBPipeline {
+	GUBGraphicContext *graphic_context;
+
 	GstElement *pipeline;
 	GstSample *last_sample;
 	int last_width;
@@ -30,6 +32,9 @@ EXPORT_API GUBPipeline *gub_pipeline_create()
 
 EXPORT_API void gub_pipeline_destroy(GUBPipeline *pipeline)
 {
+	gub_destroy_graphic_context(pipeline->graphic_context);
+	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_NULL);
+	free(pipeline);
 }
 
 EXPORT_API void gub_pipeline_play(GUBPipeline *pipeline)
@@ -109,6 +114,8 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
 	}
 
+	pipeline->graphic_context = gub_create_graphic_context(pipeline->pipeline);
+
 	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 }
 
@@ -187,7 +194,7 @@ EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNat
 	}
 
 	gst_buffer_map(last_buffer, &map, GST_MAP_READ);
-	gub_copy_texture(map.data, pipeline->last_width, pipeline->last_height, _TextureNativePtr);
+	gub_copy_texture(pipeline->graphic_context, map.data, pipeline->last_width, pipeline->last_height, _TextureNativePtr);
 	gst_buffer_unmap(last_buffer, &map);
 
 	gst_sample_unref(pipeline->last_sample);

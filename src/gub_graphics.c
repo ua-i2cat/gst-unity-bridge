@@ -17,9 +17,28 @@
 #define SUPPORT_OPENGL 1
 #endif
 
+ /* Created by Unity when the rendering engine is selected */
+typedef void GUBGraphicDevice;
+
+typedef GUBGraphicDevice* (*GUBCreateGraphicDevicePFN)(void* device, int deviceType);
+typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
+typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstElement *pipeline);
+typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
+typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr);
+
+typedef struct _GUBGraphicBackend {
+	GUBCreateGraphicDevicePFN create_graphic_device;
+	GUBDestroyGraphicDevicePFN destroy_graphic_device;
+	GUBCreateGraphicContextPFN create_graphic_context;
+	GUBDestroyGraphicContextPFN destroy_graphic_context;
+	GUBCopyTexturePFN copy_texture;
+} GUBGraphicBackend;
+
+GUBGraphicBackend *gub_graphic_backend = NULL;
+GUBGraphicDevice *gub_graphic_device = NULL;
+
 /* Copied from IUnityGraphics.h and added some bits */
-typedef enum UnityGfxRenderer
-{
+typedef enum UnityGfxRenderer {
 	kUnityGfxRendererOpenGL = 0, // Desktop OpenGL
 	kUnityGfxRendererD3D9 = 1, // Direct3D 9
 	kUnityGfxRendererD3D11 = 2, // Direct3D 11
@@ -36,16 +55,12 @@ typedef enum UnityGfxRenderer
 	kUnityGfxRendererD3D12 = 18, // Direct3D 12
 } UnityGfxRenderer;
 
-typedef enum UnityGfxDeviceEventType
-{
+typedef enum UnityGfxDeviceEventType {
 	kUnityGfxDeviceEventInitialize = 0,
 	kUnityGfxDeviceEventShutdown = 1,
 	kUnityGfxDeviceEventBeforeReset = 2,
 	kUnityGfxDeviceEventAfterReset = 3,
 } UnityGfxDeviceEventType;
-
-static UnityGfxRenderer gub_renderer = -1;
-static void *gub_device = NULL;
 
 // Add alpha channel, OMFG
 static void gub_add_alpha_channel(const char *src, char *dst, int size)
@@ -60,12 +75,13 @@ static void gub_add_alpha_channel(const char *src, char *dst, int size)
 }
 
 #if SUPPORT_D3D9
-// ----------------- D3D9 SUPPORT -----------------
+// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------- D3D9 SUPPORT ---------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 #include <d3d9.h>
 
-static void gub_copy_texture_D3D9(const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
 {
-	IDirect3DDevice9* device = (IDirect3DDevice9*)gub_device;
 	if (native_texture_ptr)
 	{
 		IDirect3DTexture9* d3dtex = (IDirect3DTexture9*)native_texture_ptr;
@@ -78,17 +94,31 @@ static void gub_copy_texture_D3D9(const char *data, int w, int h, void *native_t
 	}
 }
 
+GUBGraphicBackend gub_graphic_backend_d3d9 = {
+	/* create_graphic_device   */ NULL,
+	/* destroy_graphic_device  */ NULL,
+	/* create_graphic_context  */ NULL,
+	/* destroy_graphic_context */ NULL,
+	/* copy_texture */            gub_copy_texture_d3d9
+};
+
 #endif
 
 #if SUPPORT_D3D11
-// ----------------- D3D11 SUPPORT -----------------
+// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------- D3D11 SUPPORT --------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 #include <d3d11.h>
 
-static void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_texture_ptr)
+typedef struct _GUBGraphicDeviceD3D11 {
+	ID3D11Device* d3d11device;
+} GUBGraphicDeviceD3D11;
+
+static void gub_copy_texture_d3d11(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
 {
-	ID3D11Device* device = (ID3D11Device*)gub_device;
+	GUBGraphicDeviceD3D11* gdevice = (GUBGraphicDeviceD3D11*)gub_graphic_device;
 	ID3D11DeviceContext* ctx = NULL;
-	device->lpVtbl->GetImmediateContext(device, &ctx);
+	gdevice->d3d11device->lpVtbl->GetImmediateContext(gdevice->d3d11device, &ctx);
 	// update native texture from code
 	if (native_texture_ptr) {
 		char *data2 = malloc(w * h * 4);
@@ -99,13 +129,41 @@ static void gub_copy_texture_D3D11(const char *data, int w, int h, void *native_
 	ctx->lpVtbl->Release(ctx);
 }
 
+static GUBGraphicDevice *gub_create_graphic_device_d3d11(void* device, int deviceType)
+{
+	GUBGraphicDeviceD3D11 *gdevice = (GUBGraphicDeviceD3D11 *)malloc(sizeof(GUBGraphicDeviceD3D11));
+	gdevice->d3d11device = (ID3D11Device*)device;
+	return gdevice;
+}
+
+static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
+{
+	free(gdevice);
+}
+
+GUBGraphicBackend gub_graphic_backend_d3d11 = {
+	/* create_graphic_device   */ gub_create_graphic_device_d3d11,
+	/* destroy_graphic_device  */ gub_destroy_graphic_device_d3d11,
+	/* create_graphic_context  */ NULL,
+	/* destroy_graphic_context */ NULL,
+	/* copy_texture */            gub_copy_texture_d3d11
+};
+
 #endif
 
 #if SUPPORT_OPENGL
-// ----------------- DESKTOP OPENGL SUPPORT -----------------
-#include <GL/gl.h>
+// --------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------- OPENGL SUPPORT --------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
-static void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native_texture_ptr)
+#define GST_USE_UNSTABLE_API
+#include <gst/gl/gstglcontext.h>
+
+typedef struct _GUBGraphicContextOpenGL {
+	GstGLDisplay *display;
+} GUBGraphicContextOpenGL;
+
+static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
@@ -115,11 +173,55 @@ static void gub_copy_texture_OpenGL(const char *data, int w, int h, void *native
 	}
 }
 
+static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline)
+{
+	GUBGraphicContextOpenGL *gcontext = NULL;
+	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
+	if (raw_context) {
+		GstStructure *s;
+		GstGLDisplay *display = gst_gl_display_new();
+		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_ANY, GST_GL_API_OPENGL);
+		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
+		gub_log("Current GL context is %p", raw_context);
+		s = gst_context_writable_structure(context);
+		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
+		gst_element_set_context(pipeline, context);
+		gst_context_unref(context);
+		gub_log("Set GL context. Display type is %p", gl_context->display->type);
+
+		gcontext = (GUBGraphicContextOpenGL *)malloc(sizeof(GUBGraphicContextOpenGL));
+		gcontext->display = display;
+	}
+	else {
+		gub_log("Could not retrieve current GL context");
+	}
+
+	return gcontext;
+}
+
+static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext)
+{
+	gst_object_unref(gcontext->display);
+	free(gcontext);
+}
+
+GUBGraphicBackend gub_graphic_backend_opengl = {
+	/* create_graphic_device   */ NULL,
+	/* destroy_graphic_device  */ NULL,
+	/* create_graphic_context  */ gub_create_graphic_context_opengl,
+	/* destroy_graphic_context */ gub_destroy_graphic_context_opengl,
+	/* copy_texture */            gub_copy_texture_opengl
+};
+
 #endif
 
 #if SUPPORT_EGL
-// ----------------- OPENGL-ES SUPPORT -----------------
-#include <GLES/gl.h>
+// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------- EGL SUPPORT ----------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+
+#define GST_USE_UNSTABLE_API
+#include <gst/gl/gstglcontext.h>
 
 static void gub_copy_texture_EGL(const char *data, int w, int h, void *native_texture_ptr)
 {
@@ -131,10 +233,55 @@ static void gub_copy_texture_EGL(const char *data, int w, int h, void *native_te
 	}
 }
 
+static void gub_set_graphic_context_EGL(GstElement *pipeline)
+{
+	GstGLContext *gl_context = GST_GL_CONTEXT(gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_ANY));
+	if (gl_context) {
+		GstStructure *s;
+		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
+		s = gst_context_writable_structure(context);
+		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
+		gst_element_set_context(pipeline, context);
+		gst_context_unref(context);
+		gub_log("Set GL context. Display type is %d", gl_context->display->type);
+	}
+	else {
+		gub_log("Could not retrieve current GL context");
+	}
+}
+
 #endif
 
+// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------- Internal API ---------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
-// ----------------- UNITY INTEGRATION -----------------
+GUBGraphicContext *gub_create_graphic_context(GstElement *pipeline)
+{
+	GUBGraphicContext *gcontext = NULL;
+	if (gub_graphic_backend && gub_graphic_backend->create_graphic_context) {
+		gcontext = gub_graphic_backend->create_graphic_context(pipeline);
+	}
+	return gcontext;
+}
+
+void gub_destroy_graphic_context(GUBGraphicContext *gcontext)
+{
+	if (gub_graphic_backend && gub_graphic_backend->destroy_graphic_context) {
+		gub_graphic_backend->destroy_graphic_context(gcontext);
+	}
+}
+
+void gub_copy_texture(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
+{
+	if (gub_graphic_backend && gub_graphic_backend->copy_texture) {
+		gub_graphic_backend->copy_texture(gcontext, data, w, h, native_texture_ptr);
+	}
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------- Unity integration ------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // If exported by a plugin, this function will be called when graphics device is created, destroyed,
 // and before and after it is reset (ie, resolution changed).
 void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventType)
@@ -143,25 +290,26 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 	{
 	case kUnityGfxDeviceEventInitialize:
 	case kUnityGfxDeviceEventAfterReset:
-		gub_renderer = deviceType;
-		gub_device = device;
 
-		switch (gub_renderer)
+		switch (deviceType)
 		{
 #if SUPPORT_D3D9
 		case kUnityGfxRendererD3D9:
-			gub_log("Set D3D9 graphics device");
+			gub_graphic_backend = &gub_graphic_backend_d3d9;
+			gub_log("Set D3D9 graphic device");
 			break;
 #endif
 #if SUPPORT_D3D11
 		case kUnityGfxRendererD3D11:
-			gub_log("Set D3D11 graphics device");
+			gub_graphic_backend = &gub_graphic_backend_d3d11;
+			gub_log("Set D3D11 graphic device");
 			break;
 #endif
 #if SUPPORT_OPENGL
 		case kUnityGfxRendererOpenGL:
 		case kUnityGfxRendererGLCore:
-			gub_log("Set OpenGL graphics device");
+			gub_graphic_backend = &gub_graphic_backend_opengl;
+			gub_log("Set OpenGL graphic device");
 			break;
 #endif
 #if SUPPORT_EGL
@@ -174,37 +322,16 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 			gub_log("Unsupported graphic device %d", deviceType);
 			break;
 		}
+		if (gub_graphic_backend->create_graphic_device) {
+			gub_graphic_device = gub_graphic_backend->create_graphic_device(device, deviceType);
+		}
 		break;
-	}
-}
-
-void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
-{
-	switch (gub_renderer)
-	{
-#if SUPPORT_D3D9
-	case kUnityGfxRendererD3D9:
-		gub_copy_texture_D3D9(data, w, h, native_texture_ptr);
-		break;
-#endif
-#if SUPPORT_D3D11
-	case kUnityGfxRendererD3D11:
-		gub_copy_texture_D3D11(data, w, h, native_texture_ptr);
-		break;
-#endif
-#if SUPPORT_OPENGL
-	case kUnityGfxRendererOpenGL:
-	case kUnityGfxRendererGLCore:
-		gub_copy_texture_OpenGL(data, w, h, native_texture_ptr);
-		break;
-#endif
-#if SUPPORT_EGL
-	case kUnityGfxRendererOpenGLES20:
-	case kUnityGfxRendererOpenGLES30:
-		gub_copy_texture_EGL(data, w, h, native_texture_ptr);
-		break;
-#endif
-	default:
+	case kUnityGfxDeviceEventShutdown:
+	case kUnityGfxDeviceEventBeforeReset:
+		if (gub_graphic_device && gub_graphic_backend && gub_graphic_backend->destroy_graphic_device) {
+			gub_log("Destroying graphic device");
+			gub_graphic_backend->destroy_graphic_device(gub_graphic_device);
+		}
 		break;
 	}
 }
