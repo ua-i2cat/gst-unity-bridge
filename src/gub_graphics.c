@@ -4,6 +4,7 @@
  */
 
 #include "gub.h"
+#include <gst/gst.h>
 #include <stdio.h>
 
 #if defined(_WIN32)
@@ -16,7 +17,7 @@
 #define SUPPORT_OPENGL 1
 #endif
 
-/* Copied from IUnityGraphics.h */
+/* Copied from IUnityGraphics.h and added some bits */
 typedef enum UnityGfxRenderer
 {
 	kUnityGfxRendererOpenGL = 0, // Desktop OpenGL
@@ -29,8 +30,9 @@ typedef enum UnityGfxRenderer
 	kUnityGfxRendererOpenGLES30 = 11, // OpenGL ES 3.0
 	kUnityGfxRendererGXM = 12, // PlayStation Vita
 	kUnityGfxRendererPS4 = 13, // PlayStation 4
-	kUnityGfxRendererXboxOne = 14, // Xbox One        
+	kUnityGfxRendererXboxOne = 14, // Xbox One
 	kUnityGfxRendererMetal = 16, // iOS Metal
+	kUnityGfxRendererGLCore = 17, // OpenGL Core
 	kUnityGfxRendererD3D12 = 18, // Direct3D 12
 } UnityGfxRenderer;
 
@@ -158,6 +160,7 @@ void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, int eventTy
 #endif
 #if SUPPORT_OPENGL
 		case kUnityGfxRendererOpenGL:
+		case kUnityGfxRendererGLCore:
 			gub_log("Set OpenGL graphics device");
 			break;
 #endif
@@ -191,6 +194,7 @@ void gub_copy_texture(const char *data, int w, int h, void *native_texture_ptr)
 #endif
 #if SUPPORT_OPENGL
 	case kUnityGfxRendererOpenGL:
+	case kUnityGfxRendererGLCore:
 		gub_copy_texture_OpenGL(data, w, h, native_texture_ptr);
 		break;
 #endif
