@@ -20,6 +20,7 @@ void gub_log(const char *format, ...)
 	va_start(args, format);
 	vfprintf(logf, format, args);
 	fprintf(logf, "\n");
+	fflush(logf);
 	va_end(args);
 }
 
