@@ -85,12 +85,12 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 	}
 
 	source = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "source");
-	if (!source) {
-		gub_log("Pipeline does not contain a source named 'source'");
-		return;
+	if (source) {
+		g_signal_connect(source, "source-setup", G_CALLBACK(source_created), NULL);
+		gst_object_unref(source);
+	} else {
+		gub_log("Pipeline does not contain a source named 'source', network proerties will not be set");
 	}
-	g_signal_connect(source, "source-setup", G_CALLBACK(source_created), NULL);
-	gst_object_unref(source);
 
 	if (net_clock_addr != NULL) {
 		gint64 start, stop;
