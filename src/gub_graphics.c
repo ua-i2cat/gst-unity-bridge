@@ -159,6 +159,14 @@ GUBGraphicBackend gub_graphic_backend_d3d11 = {
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gstglcontext.h>
 
+#if GST_GL_HAVE_PLATFORM_WGL
+#define GUB_GL_PLATFORM GST_GL_PLATFORM_WGL
+#elif GST_GL_HAVE_PLATFORM_GLX
+#define GUB_GL_PLATFORM GST_GL_PLATFORM_GLX
+#else
+#error "Unsupport GST_GL_PLATFORM"
+#endif
+
 typedef struct _GUBGraphicContextOpenGL {
 	GstGLDisplay *display;
 } GUBGraphicContextOpenGL;
@@ -176,18 +184,18 @@ static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, const char *dat
 static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline)
 {
 	GUBGraphicContextOpenGL *gcontext = NULL;
-	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_ANY);
+	guintptr raw_context = gst_gl_context_get_current_gl_context(GUB_GL_PLATFORM);
 	if (raw_context) {
 		GstStructure *s;
 		GstGLDisplay *display = gst_gl_display_new();
-		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_ANY, GST_GL_API_OPENGL);
+		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GUB_GL_PLATFORM, GST_GL_API_OPENGL);
 		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
 		gub_log("Current GL context is %p", raw_context);
 		s = gst_context_writable_structure(context);
 		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
 		gst_element_set_context(pipeline, context);
 		gst_context_unref(context);
-		gub_log("Set GL context. Display type is %p", gl_context->display->type);
+		gub_log("Set GL context. Display type is %d", gl_context->display->type);
 
 		gcontext = (GUBGraphicContextOpenGL *)malloc(sizeof(GUBGraphicContextOpenGL));
 		gcontext->display = display;
