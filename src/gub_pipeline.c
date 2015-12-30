@@ -177,25 +177,11 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight)
 {
-	GstBuffer *last_buffer = NULL;
-	GstCaps *last_caps = NULL;
-	GstMapInfo map;
-
 	if (!pipeline->last_sample) {
 		return;
 	}
 
-	last_buffer = gst_sample_get_buffer(pipeline->last_sample);
-	if (!last_buffer) {
-		gub_log("Sample contains no buffer");
-		gst_sample_unref(pipeline->last_sample);
-		pipeline->last_sample = NULL;
-		return;
-	}
-
-	gst_buffer_map(last_buffer, &map, GST_MAP_READ);
-	gub_copy_texture(pipeline->graphic_context, map.data, pipeline->last_width, pipeline->last_height, _TextureNativePtr);
-	gst_buffer_unmap(last_buffer, &map);
+	gub_blit_image(pipeline->graphic_context, pipeline->last_sample, _TextureNativePtr);
 
 	gst_sample_unref(pipeline->last_sample);
 	pipeline->last_sample = NULL;

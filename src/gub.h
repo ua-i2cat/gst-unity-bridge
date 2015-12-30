@@ -20,6 +20,7 @@ typedef void GUBGraphicContext;
 GUBGraphicContext *gub_create_graphic_context(GstElement *pipeline);
 void gub_destroy_graphic_context(GUBGraphicContext *context);
 void gub_copy_texture(GUBGraphicContext *gcontext, const char *data, int w, int h, void *_TextureNativePtr);
+gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *texture_native_ptr);
 
 void gub_log(const char *format, ...);
 
