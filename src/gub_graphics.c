@@ -338,7 +338,7 @@ gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *te
 	caps = gst_sample_get_caps(sample);
 	gst_video_info_from_caps(&video_info, caps);
 
-	gst_video_frame_map(&video_frame, &video_info, buffer, GST_MAP_READ | GST_MAP_GL);
+	gst_video_frame_map(&video_frame, &video_info, buffer, GST_MAP_READ);
 	gub_copy_texture(gcontext, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info.width, video_info.height, texture_native_ptr);
 	gst_video_frame_unmap(&video_frame);
 
