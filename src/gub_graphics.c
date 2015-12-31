@@ -25,6 +25,7 @@ typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
 typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstElement *pipeline);
 typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
 typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr);
+typedef const gchar* (*GUBGetVideoBranchDescriptionPFN)();
 
 typedef struct _GUBGraphicBackend {
 	GUBCreateGraphicDevicePFN create_graphic_device;
@@ -32,6 +33,7 @@ typedef struct _GUBGraphicBackend {
 	GUBCreateGraphicContextPFN create_graphic_context;
 	GUBDestroyGraphicContextPFN destroy_graphic_context;
 	GUBCopyTexturePFN copy_texture;
+	GUBGetVideoBranchDescriptionPFN get_video_branch_description;
 } GUBGraphicBackend;
 
 GUBGraphicBackend *gub_graphic_backend = NULL;
@@ -94,12 +96,18 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, const char *data,
 	}
 }
 
+static const gchar *gub_get_video_branch_description_d3d9()
+{
+	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+}
+
 GUBGraphicBackend gub_graphic_backend_d3d9 = {
-	/* create_graphic_device   */ NULL,
-	/* destroy_graphic_device  */ NULL,
-	/* create_graphic_context  */ NULL,
-	/* destroy_graphic_context */ NULL,
-	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_d3d9
+	/* create_graphic_device   */      NULL,
+	/* destroy_graphic_device  */      NULL,
+	/* create_graphic_context  */      NULL,
+	/* destroy_graphic_context */      NULL,
+	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d9,
+	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d9
 };
 
 #endif
@@ -141,12 +149,18 @@ static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
 	free(gdevice);
 }
 
+static const gchar *gub_get_video_branch_description_d3d11()
+{
+	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+}
+
 GUBGraphicBackend gub_graphic_backend_d3d11 = {
-	/* create_graphic_device   */ (GUBCreateGraphicDevicePFN)gub_create_graphic_device_d3d11,
-	/* destroy_graphic_device  */ (GUBDestroyGraphicDevicePFN)gub_destroy_graphic_device_d3d11,
-	/* create_graphic_context  */ NULL,
-	/* destroy_graphic_context */ NULL,
-	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_d3d11
+	/* create_graphic_device   */      (GUBCreateGraphicDevicePFN)gub_create_graphic_device_d3d11,
+	/* destroy_graphic_device  */      (GUBDestroyGraphicDevicePFN)gub_destroy_graphic_device_d3d11,
+	/* create_graphic_context  */      NULL,
+	/* destroy_graphic_context */      NULL,
+	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d11,
+	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d11
 };
 
 #endif
@@ -217,12 +231,18 @@ static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext
 	}
 }
 
+static const gchar *gub_get_video_branch_description_opengl()
+{
+	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+}
+
 GUBGraphicBackend gub_graphic_backend_opengl = {
-	/* create_graphic_device   */ NULL,
-	/* destroy_graphic_device  */ NULL,
-	/* create_graphic_context  */ (GUBCreateGraphicContextPFN)gub_create_graphic_context_opengl,
-	/* destroy_graphic_context */ (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_opengl,
-	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_opengl
+	/* create_graphic_device   */      NULL,
+	/* destroy_graphic_device  */      NULL,
+	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_opengl,
+	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_opengl,
+	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_opengl,
+	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_opengl
 };
 
 #endif
@@ -285,12 +305,18 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 	}
 }
 
+static const gchar *gub_get_video_branch_description_egl()
+{
+	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D  ! fakesink sync=1 name=sink";
+}
+
 GUBGraphicBackend gub_graphic_backend_egl = {
-	/* create_graphic_device   */ NULL,
-	/* destroy_graphic_device  */ NULL,
-	/* create_graphic_context  */ (GUBCreateGraphicContextPFN)gub_create_graphic_context_egl,
-	/* destroy_graphic_context */ (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_egl,
-	/* copy_texture */            (GUBCopyTexturePFN)gub_copy_texture_egl
+	/* create_graphic_device   */      NULL,
+	/* destroy_graphic_device  */      NULL,
+	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_egl,
+	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_egl,
+	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_egl
+	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_egl
 };
 
 #endif
@@ -315,19 +341,16 @@ void gub_destroy_graphic_context(GUBGraphicContext *gcontext)
 	}
 }
 
-void gub_copy_texture(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
-{
-	if (gub_graphic_backend && gub_graphic_backend->copy_texture) {
-		gub_graphic_backend->copy_texture(gcontext, data, w, h, native_texture_ptr);
-	}
-}
-
 gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *texture_native_ptr)
 {
 	GstBuffer *buffer = NULL;
 	GstCaps *caps = NULL;
 	GstVideoFrame video_frame;
 	GstVideoInfo video_info;
+
+	if (!gub_graphic_backend || !gub_graphic_backend->copy_texture) {
+		return FALSE;
+	}
 
 	buffer = gst_sample_get_buffer(sample);
 	if (!buffer) {
@@ -339,10 +362,20 @@ gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *te
 	gst_video_info_from_caps(&video_info, caps);
 
 	gst_video_frame_map(&video_frame, &video_info, buffer, GST_MAP_READ);
-	gub_copy_texture(gcontext, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info.width, video_info.height, texture_native_ptr);
+	gub_graphic_backend->copy_texture(gcontext, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0),
+		video_info.width, video_info.height, texture_native_ptr);
 	gst_video_frame_unmap(&video_frame);
 
 	return TRUE;
+}
+
+const gchar *gub_get_video_branch_description()
+{
+	const gchar *description = NULL;
+	if (gub_graphic_backend && gub_graphic_backend->get_video_branch_description) {
+		description = gub_graphic_backend->get_video_branch_description();
+	}
+	return description;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -77,8 +77,13 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 {
 	GError *err = NULL;
 	GstElement *source;
+	gchar *full_pipeline_description = NULL;
 
-	pipeline->pipeline = gst_parse_launch(pipeline_description, &err);
+	full_pipeline_description = g_strdup_printf(pipeline_description, gub_get_video_branch_description());
+	gub_log("Using pipeline %s", full_pipeline_description);
+
+	pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
+	g_free(full_pipeline_description);
 	if (err) {
 		gub_log("Failed to create pipeline: %s", err->message);
 		return;
