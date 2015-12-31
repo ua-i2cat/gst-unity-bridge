@@ -327,7 +327,7 @@ GUBGraphicBackend gub_graphic_backend_egl = {
 	/* destroy_graphic_device  */      NULL,
 	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_egl,
 	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_egl,
-	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_egl
+	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_egl,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_egl
 };
 
