@@ -114,8 +114,6 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
 	}
 
-	pipeline->graphic_context = gub_create_graphic_context(pipeline->pipeline);
-
 	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 }
 
@@ -179,6 +177,10 @@ EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNat
 {
 	if (!pipeline->last_sample) {
 		return;
+	}
+
+	if (pipeline->graphic_context == NULL) {
+		pipeline->graphic_context = gub_create_graphic_context(pipeline->pipeline);
 	}
 
 	gub_blit_image(pipeline->graphic_context, pipeline->last_sample, _TextureNativePtr);
