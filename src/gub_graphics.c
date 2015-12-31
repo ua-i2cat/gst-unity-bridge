@@ -5,6 +5,7 @@
 
 #include "gub.h"
 #include <gst/gst.h>
+#include <gst/video/video.h>
 #include <stdio.h>
 
 #if defined(_WIN32)
@@ -24,7 +25,7 @@ typedef GUBGraphicDevice* (*GUBCreateGraphicDevicePFN)(void* device, int deviceT
 typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
 typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstElement *pipeline);
 typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
-typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr);
+typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr);
 typedef const gchar* (*GUBGetVideoBranchDescriptionPFN)();
 
 typedef struct _GUBGraphicBackend {
@@ -82,16 +83,20 @@ static void gub_add_alpha_channel(const char *src, char *dst, int size)
 // --------------------------------------------------------------------------------------------------------------------
 #include <d3d9.h>
 
-static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
 		IDirect3DTexture9* d3dtex = (IDirect3DTexture9*)native_texture_ptr;
 		D3DSURFACE_DESC desc;
-		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
 		D3DLOCKED_RECT lr;
+		GstVideoFrame video_frame;
+
+		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
 		d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, 0);
-		gub_add_alpha_channel(data, (char*)lr.pBits, w * h);
+		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
+		gub_add_alpha_channel(GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), (char*)lr.pBits, video_info->width * video_info->height);
+		gst_video_frame_unmap(&video_frame);
 		d3dtex->lpVtbl->UnlockRect(d3dtex, 0);
 	}
 }
@@ -122,16 +127,20 @@ typedef struct _GUBGraphicDeviceD3D11 {
 	ID3D11Device* d3d11device;
 } GUBGraphicDeviceD3D11;
 
-static void gub_copy_texture_d3d11(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_d3d11(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
 	GUBGraphicDeviceD3D11* gdevice = (GUBGraphicDeviceD3D11*)gub_graphic_device;
 	ID3D11DeviceContext* ctx = NULL;
 	gdevice->d3d11device->lpVtbl->GetImmediateContext(gdevice->d3d11device, &ctx);
 	// update native texture from code
 	if (native_texture_ptr) {
-		char *data2 = malloc(w * h * 4);
-		gub_add_alpha_channel(data, data2, w*h);
-		ctx->lpVtbl->UpdateSubresource(ctx, (ID3D11Resource *)native_texture_ptr, 0, NULL, data2, w * 4, 0);
+		GstVideoFrame video_frame;
+
+		char *data2 = malloc(video_info->width * video_info->height * 4);
+		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
+		gub_add_alpha_channel(GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), data2, video_info->width * video_info->height);
+		gst_video_frame_unmap(&video_frame);
+		ctx->lpVtbl->UpdateSubresource(ctx, (ID3D11Resource *)native_texture_ptr, 0, NULL, data2, video_info->width * 4, 0);
 		free(data2);
 	}
 	ctx->lpVtbl->Release(ctx);
@@ -185,13 +194,16 @@ typedef struct _GUBGraphicContextOpenGL {
 	GstGLDisplay *display;
 } GUBGraphicContextOpenGL;
 
-static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
 	if (native_texture_ptr)
 	{
 		GLuint gltex = (GLuint)(size_t)(native_texture_ptr);
+		GstVideoFrame video_frame;
 		glBindTexture(GL_TEXTURE_2D, gltex);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, video_info->width, video_info->height, GL_RGB, GL_UNSIGNED_BYTE, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0));
+		gst_video_frame_unmap(&video_frame);
 	}
 }
 
@@ -345,7 +357,6 @@ gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *te
 {
 	GstBuffer *buffer = NULL;
 	GstCaps *caps = NULL;
-	GstVideoFrame video_frame;
 	GstVideoInfo video_info;
 
 	if (!gub_graphic_backend || !gub_graphic_backend->copy_texture) {
@@ -361,10 +372,7 @@ gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *te
 	caps = gst_sample_get_caps(sample);
 	gst_video_info_from_caps(&video_info, caps);
 
-	gst_video_frame_map(&video_frame, &video_info, buffer, GST_MAP_READ);
-	gub_graphic_backend->copy_texture(gcontext, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0),
-		video_info.width, video_info.height, texture_native_ptr);
-	gst_video_frame_unmap(&video_frame);
+	gub_graphic_backend->copy_texture(gcontext, &video_info, buffer, texture_native_ptr);
 
 	return TRUE;
 }
