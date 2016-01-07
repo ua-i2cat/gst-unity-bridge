@@ -72,6 +72,7 @@ Solution and Project files are included for Visual Studio 2015. Just open and bu
 
 ### Building the plugin for Android
 First off, some patches for GStreamer:
+
 - Take this into account if using a GStreamer version below 1.6.2: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 - In `$PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h`, make sure `GST_GL_HAVE_GLSYNC` is defined to 1
 - In `$PREFIX/share/gst-android/ndk-build/gstreamer_android-1.0.c.in`, #if 0 all methods after `gst_android_load_gio_modules`, and the three variables at the top (`_context`, `_class_loader` and `_priv_gst_info_start_time`)
