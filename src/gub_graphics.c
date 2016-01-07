@@ -12,6 +12,7 @@
 #define SUPPORT_OPENGL 1
 #define SUPPORT_D3D9 1
 #define SUPPORT_D3D11 1
+#define SUPPORT_EGL 1
 #elif defined(__ANDROID__)
 #define SUPPORT_EGL 1
 #else
@@ -269,15 +270,30 @@ GUBGraphicBackend gub_graphic_backend_opengl = {
 
 typedef struct _GUBGraphicContextEGL {
 	GstGLDisplay *display;
+	GLuint fbo;
 } GUBGraphicContextEGL;
 
-static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, const char *data, int w, int h, void *native_texture_ptr)
+static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
+	// glBindBuffer(GL_ARRAY_BUFFER_BINDING, 0);
+
 	if (native_texture_ptr)
 	{
-		GLuint gltex = (GLuint)(size_t)(native_texture_ptr);
-		glBindTexture(GL_TEXTURE_2D, gltex);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+		GLenum status;
+		GLuint unity_tex = (GLuint)(size_t)(native_texture_ptr);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, gcontext->fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, unity_tex, 0);
+		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			gub_log("Frame buffer not complete, status 0x%x, unity_tex %d", status, unity_tex);
+		}
+		glClearColor(1.f, 0.f, 0.f, 0.f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindTexture(GL_TEXTURE_2D, gltex);
+		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
 	}
 }
 
@@ -299,6 +315,8 @@ static GUBGraphicContext *gub_create_graphic_context_egl(GstElement *pipeline)
 
 		gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
 		gcontext->display = display;
+
+		glGenFramebuffers(1, &gcontext->fbo);
 	}
 	else {
 		gub_log("Could not retrieve current EGL context");
@@ -313,6 +331,7 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 		if (gcontext->display) {
 			gst_object_unref(gcontext->display);
 		}
+		glDeleteFramebuffers(1, &gcontext->fbo);
 		free(gcontext);
 	}
 }
