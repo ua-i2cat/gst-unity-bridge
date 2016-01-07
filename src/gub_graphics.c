@@ -269,44 +269,181 @@ GUBGraphicBackend gub_graphic_backend_opengl = {
 #include <gst/gl/gstglcontext.h>
 
 typedef struct _GUBGraphicContextEGL {
+	GstGLContext *gl;
 	GstGLDisplay *display;
 	GLuint fbo;
+	GLuint po;
+	GLuint vao;
+	GLuint vbo;
 } GUBGraphicContextEGL;
+
+static GLuint gub_load_shader(GLenum type, const char *shaderSrc)
+{
+	GLuint shader;
+	GLint compiled;
+
+	// Create the shader object
+	shader = glCreateShader(type);
+
+	if (shader == 0)
+		return 0;
+
+	// Load the shader source
+	glShaderSource(shader, 1, &shaderSrc, NULL);
+
+	// Compile the shader
+	glCompileShader(shader);
+
+	// Check the compile status
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+
+	if (!compiled) {
+		GLint infoLen = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char* infoLog = malloc(sizeof(char) * infoLen);
+			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
+			gub_log("Error compiling shader: %s", infoLog);
+			free(infoLog);
+		}
+		glDeleteShader(shader);
+		return 0;
+	}
+
+	return shader;
+}
+
+static int gub_create_program()
+{
+	GLbyte vShaderStr[] =
+		"attribute vec4 vPosition;    \n"
+		"void main()                  \n"
+		"{                            \n"
+		"   gl_Position = vPosition;  \n"
+		"}                            \n";
+
+	GLbyte fShaderStr[] =
+		"precision mediump float;                     \n"
+		"void main()                                  \n"
+		"{                                            \n"
+		"  gl_FragColor = vec4 ( 1.0, 1.0, 0.0, 1.0 );\n"
+		"}                                            \n";
+
+	GLuint vertexShader;
+	GLuint fragmentShader;
+	GLuint programObject;
+	GLint linked;
+
+	// Load the vertex/fragment shaders
+	vertexShader = gub_load_shader(GL_VERTEX_SHADER, vShaderStr);
+	fragmentShader = gub_load_shader(GL_FRAGMENT_SHADER, fShaderStr);
+
+	// Create the program object
+	programObject = glCreateProgram();
+
+	if (programObject == 0)
+		return 0;
+
+	glAttachShader(programObject, vertexShader);
+	glAttachShader(programObject, fragmentShader);
+
+	// Bind vPosition to attribute 0   
+	glBindAttribLocation(programObject, 0, "vPosition");
+
+	// Link the program
+	glLinkProgram(programObject);
+
+	// Check the link status
+	glGetProgramiv(programObject, GL_LINK_STATUS, &linked);
+
+	if (!linked) {
+		GLint infoLen = 0;
+		glGetProgramiv(programObject, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char* infoLog = malloc(sizeof(char) * infoLen);
+			glGetProgramInfoLog(programObject, infoLen, NULL, infoLog);
+			gub_log("Error linking program: %s", infoLog);
+			free(infoLog);
+		}
+		glDeleteProgram(programObject);
+		return 0;
+	}
+
+	// Store the program object
+	return programObject;
+}
 
 static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
-	// glBindBuffer(GL_ARRAY_BUFFER_BINDING, 0);
-
 	if (native_texture_ptr)
 	{
+		GLint previous_vp[4];
+		GLint previous_prog;
+		GLint previous_fbo;
+
 		GLenum status;
 		GLuint unity_tex = (GLuint)(size_t)(native_texture_ptr);
 
+		GstVideoFrame video_frame;
+		GLuint gst_tex;
+		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ | GST_MAP_GL);
+		gst_tex = *(guint *)GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0);
+		gst_video_frame_unmap(&video_frame);
+
+		glGetIntegerv(GL_VIEWPORT, previous_vp);
+		glGetIntegerv(GL_CURRENT_PROGRAM, &previous_prog);
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_fbo);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, gcontext->fbo);
+		glViewport(0, 0, video_info->width, video_info->height);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, unity_tex, 0);
 		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			gub_log("Frame buffer not complete, status 0x%x, unity_tex %d", status, unity_tex);
 		}
-		glClearColor(1.f, 0.f, 0.f, 0.f);
-		glClear(GL_COLOR_BUFFER_BIT);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glBindTexture(GL_TEXTURE_2D, gltex);
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+		glPolygonOffset(0.0f, 0.0f);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+
+		glUseProgram(gcontext->po);
+		if (gcontext->gl->gl_vtable->BindVertexArray)
+			gcontext->gl->gl_vtable->BindVertexArray(gcontext->vao);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, gcontext->vbo);
+		glVertexAttribPointer((GLuint)0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, previous_fbo);
+		glViewport(previous_vp[0], previous_vp[1], previous_vp[2], previous_vp[3]);
+		glUseProgram(previous_prog);
+		if (gcontext->gl->gl_vtable->BindVertexArray)
+			gcontext->gl->gl_vtable->BindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 }
 
 static GUBGraphicContext *gub_create_graphic_context_egl(GstElement *pipeline)
 {
+	static const GLfloat vVertices[] = {
+		-1.f, -1.f,
+		-1.f,  1.f,
+		 1.f, -1.f,
+		 1.f,  1.f
+	};
+
 	GUBGraphicContextEGL *gcontext = NULL;
 	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
 	if (raw_context) {
 		GstStructure *s;
 		GstGLDisplay *display = gst_gl_display_new();
-		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_OPENGL);
+		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_GLES2);
 		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
-		gub_log("Current GL context is %p", raw_context);
+		gub_log("Current GL context is %p (Platform %s API %s)", raw_context,
+			gst_gl_platform_to_string(gst_gl_context_get_gl_platform(gl_context)),
+			gst_gl_api_to_string(gst_gl_context_get_gl_api(gl_context)));
 		s = gst_context_writable_structure(context);
 		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
 		gst_element_set_context(pipeline, context);
@@ -314,9 +451,22 @@ static GUBGraphicContext *gub_create_graphic_context_egl(GstElement *pipeline)
 		gub_log("Set GL context. Display type is %p", gl_context->display->type);
 
 		gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
+		gcontext->gl = gl_context;
 		gcontext->display = display;
 
 		glGenFramebuffers(1, &gcontext->fbo);
+
+		if (gl_context->gl_vtable->GenVertexArrays)
+			gl_context->gl_vtable->GenVertexArrays(1, &gcontext->vao);
+		if (gcontext->gl->gl_vtable->BindVertexArray)
+			gcontext->gl->gl_vtable->BindVertexArray(gcontext->vao);
+
+		glGenBuffers(1, &gcontext->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, gcontext->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), vVertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		gcontext->po = gub_create_program();
 	}
 	else {
 		gub_log("Could not retrieve current EGL context");
@@ -332,6 +482,10 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 			gst_object_unref(gcontext->display);
 		}
 		glDeleteFramebuffers(1, &gcontext->fbo);
+		glDeleteProgram(gcontext->po);
+		if (gcontext->gl->gl_vtable->DeleteVertexArrays)
+			gcontext->gl->gl_vtable->DeleteVertexArrays(1, &gcontext->vao);
+		glDeleteBuffers(1, &gcontext->vbo);
 		free(gcontext);
 	}
 }
