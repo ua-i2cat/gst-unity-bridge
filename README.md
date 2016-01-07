@@ -71,11 +71,11 @@ It is easier to use the prebuilt binaries included in the test project. However,
 Solution and Project files are included for Visual Studio 2015. Just open and build. Make sure the latest [GStreamer 1.0 SDK](http://gstreamer.freedesktop.org/data/pkg/windows/) is installed and the `GSTREAMER_1_0_ROOT_X86` or `GSTREAMER_1_0_ROOT_X86_64` environment variable is defined and points to the proper place. Copy the resulting `GstUnityBridge.dll` to the `Assets\Plugins` folder of your Unity project.
 
 ### Building the plugin for Android
-First off, some patches for GStreamer:
+First off, some patches for GStreamer (`$GST_PREFIX` is the folder where you installed GStreamer, for example, `C:\gstreamer\1.0\android-arm`):
 
 - Take this into account if using a GStreamer version below 1.6.2: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
-- In `$PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h`, make sure `GST_GL_HAVE_GLSYNC` is defined to 1
-- In `$PREFIX/share/gst-android/ndk-build/gstreamer_android-1.0.c.in`, #if 0 all methods after `gst_android_load_gio_modules`, and the three variables at the top (`_context`, `_class_loader` and `_priv_gst_info_start_time`)
+- In `$GST_PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h`, make sure `GST_GL_HAVE_GLSYNC` is defined to 1
+- In `$GST_PREFIX/share/gst-android/ndk-build/gstreamer_android-1.0.c.in`, #if 0 all methods after `gst_android_load_gio_modules`, and the three variables at the top (`_context`, `_class_loader` and `_priv_gst_info_start_time`)
 
 Then, the usual:
 
