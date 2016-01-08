@@ -73,11 +73,33 @@ static void source_created(GstElement *pipe, GstElement *source)
 //	g_object_set(source, "protocols", 4, NULL);
 }
 
+static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipeline)
+{
+	switch (GST_MESSAGE_TYPE(msg)) {
+	case GST_MESSAGE_NEED_CONTEXT:
+	{
+		const gchar *context_type;
+		GstContext *context = NULL;
+
+		gst_message_parse_context_type(msg, &context_type);
+		gub_log("got need context %s", context_type);
+		gub_provide_graphic_context(pipeline->graphic_context, GST_ELEMENT(msg->src), context_type);
+
+		break;
+	}
+	default:
+		break;
+	}
+
+	return FALSE;
+}
+
 EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description, const gchar *net_clock_addr, int net_clock_port)
 {
 	GError *err = NULL;
 	GstElement *source;
 	gchar *full_pipeline_description = NULL;
+	GstBus *bus = NULL;
 
 	full_pipeline_description = g_strdup_printf(pipeline_description, gub_get_video_branch_description());
 	gub_log("Using pipeline %s", full_pipeline_description);
@@ -89,12 +111,17 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		return;
 	}
 
+	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
+	gst_bus_enable_sync_message_emission(bus);
+	g_signal_connect(bus, "sync-message", G_CALLBACK(sync_bus_call), pipeline);
+	gst_object_unref(bus);
+
 	source = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "source");
 	if (source) {
 		g_signal_connect(source, "source-setup", G_CALLBACK(source_created), NULL);
 		gst_object_unref(source);
 	} else {
-		gub_log("Pipeline does not contain a source named 'source', network proerties will not be set");
+		gub_log("Pipeline does not contain a source named 'source', network properties will not be set");
 	}
 
 	if (net_clock_addr != NULL) {
@@ -118,8 +145,6 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
 		gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
 	}
-
-	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 }
 
 EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int *height)
@@ -127,6 +152,20 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "sink");
 	GstCaps *last_caps = NULL;
 	GstVideoInfo info;
+	GstState state;
+
+	gub_log("grab_frame");
+
+	if (!pipeline->graphic_context) {
+		pipeline->graphic_context = gub_create_graphic_context();
+	}
+
+	if (gst_element_get_state (pipeline->pipeline, &state, NULL, 0) != GST_STATE_CHANGE_SUCCESS
+		|| state != GST_STATE_PLAYING) {
+		gub_log("Setting pipeline to PLAYING");
+		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
+		gub_log("State change completed");
+	}
 
 	if (pipeline->last_sample) {
 		gst_sample_unref(pipeline->last_sample);
@@ -180,12 +219,10 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight)
 {
+	gub_log("blit_image");
+
 	if (!pipeline->last_sample) {
 		return;
-	}
-
-	if (pipeline->graphic_context == NULL) {
-		pipeline->graphic_context = gub_create_graphic_context(pipeline->pipeline);
 	}
 
 	gub_blit_image(pipeline->graphic_context, pipeline->last_sample, _TextureNativePtr);

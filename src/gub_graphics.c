@@ -12,7 +12,7 @@
 #define SUPPORT_OPENGL 1
 #define SUPPORT_D3D9 1
 #define SUPPORT_D3D11 1
-#define SUPPORT_EGL 1
+//#define SUPPORT_EGL 1
 #elif defined(__ANDROID__)
 #define SUPPORT_EGL 1
 #else
@@ -24,7 +24,8 @@ typedef void GUBGraphicDevice;
 
 typedef GUBGraphicDevice* (*GUBCreateGraphicDevicePFN)(void* device, int deviceType);
 typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
-typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstElement *pipeline);
+typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)();
+typedef void (*GUBProvideGraphicContextPFN)(GUBGraphicContext *gcontext, GstElement *element, const gchar *type);
 typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
 typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr);
 typedef const gchar* (*GUBGetVideoBranchDescriptionPFN)();
@@ -33,6 +34,7 @@ typedef struct _GUBGraphicBackend {
 	GUBCreateGraphicDevicePFN create_graphic_device;
 	GUBDestroyGraphicDevicePFN destroy_graphic_device;
 	GUBCreateGraphicContextPFN create_graphic_context;
+	GUBProvideGraphicContextPFN provide_graphic_context;
 	GUBDestroyGraphicContextPFN destroy_graphic_context;
 	GUBCopyTexturePFN copy_texture;
 	GUBGetVideoBranchDescriptionPFN get_video_branch_description;
@@ -111,6 +113,7 @@ GUBGraphicBackend gub_graphic_backend_d3d9 = {
 	/* create_graphic_device   */      NULL,
 	/* destroy_graphic_device  */      NULL,
 	/* create_graphic_context  */      NULL,
+	/* provide_graphic_context */      NULL,
 	/* destroy_graphic_context */      NULL,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d9,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d9
@@ -168,6 +171,7 @@ GUBGraphicBackend gub_graphic_backend_d3d11 = {
 	/* create_graphic_device   */      (GUBCreateGraphicDevicePFN)gub_create_graphic_device_d3d11,
 	/* destroy_graphic_device  */      (GUBDestroyGraphicDevicePFN)gub_destroy_graphic_device_d3d11,
 	/* create_graphic_context  */      NULL,
+	/* provide_graphic_context */      NULL,
 	/* destroy_graphic_context */      NULL,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d11,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d11
@@ -208,7 +212,7 @@ static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, GstVideoInfo *v
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline)
+static GUBGraphicContext *gub_create_graphic_context_opengl()
 {
 	GUBGraphicContextOpenGL *gcontext = NULL;
 	guintptr raw_context = gst_gl_context_get_current_gl_context(GUB_GL_PLATFORM);
@@ -216,6 +220,7 @@ static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline
 		GstStructure *s;
 		GstGLDisplay *display = gst_gl_display_new();
 		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GUB_GL_PLATFORM, GST_GL_API_OPENGL);
+/*
 		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
 		gub_log("Current GL context is %p", raw_context);
 		s = gst_context_writable_structure(context);
@@ -223,6 +228,7 @@ static GUBGraphicContext *gub_create_graphic_context_opengl(GstElement *pipeline
 		gst_element_set_context(pipeline, context);
 		gst_context_unref(context);
 		gub_log("Set GL context. Display type is %d", gl_context->display->type);
+*/
 
 		gcontext = (GUBGraphicContextOpenGL *)malloc(sizeof(GUBGraphicContextOpenGL));
 		gcontext->display = display;
@@ -253,6 +259,7 @@ GUBGraphicBackend gub_graphic_backend_opengl = {
 	/* create_graphic_device   */      NULL,
 	/* destroy_graphic_device  */      NULL,
 	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_opengl,
+	/* provide_graphic_context */      NULL,
 	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_opengl,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_opengl,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_opengl
@@ -275,6 +282,7 @@ typedef struct _GUBGraphicContextEGL {
 	GLuint po;
 	GLuint vao;
 	GLuint vbo;
+	GLint samplerLoc;
 } GUBGraphicContextEGL;
 
 static GLuint gub_load_shader(GLenum type, const char *shaderSrc)
@@ -316,18 +324,23 @@ static GLuint gub_load_shader(GLenum type, const char *shaderSrc)
 static int gub_create_program()
 {
 	GLbyte vShaderStr[] =
-		"attribute vec4 vPosition;    \n"
+		"attribute vec4 aPosition;    \n"
+		"attribute vec2 aTexCoord;    \n"
+		"varying vec2 vTexCoord;      \n"
 		"void main()                  \n"
 		"{                            \n"
-		"   gl_Position = vPosition;  \n"
+		"   gl_Position = aPosition;  \n"
+		"   vTexCoord = aTexCoord;    \n"
 		"}                            \n";
 
 	GLbyte fShaderStr[] =
-		"precision mediump float;                     \n"
-		"void main()                                  \n"
-		"{                                            \n"
-		"  gl_FragColor = vec4 ( 1.0, 1.0, 0.0, 1.0 );\n"
-		"}                                            \n";
+		"precision mediump float;                          \n"
+		"varying vec2 vTexCoord;                           \n"
+		"uniform sampler2D sTexture;                       \n"
+		"void main()                                       \n"
+		"{                                                 \n"
+		"  gl_FragColor = texture2D(sTexture, vTexCoord);  \n"
+		"}                                                 \n";
 
 	GLuint vertexShader;
 	GLuint fragmentShader;
@@ -347,8 +360,9 @@ static int gub_create_program()
 	glAttachShader(programObject, vertexShader);
 	glAttachShader(programObject, fragmentShader);
 
-	// Bind vPosition to attribute 0   
-	glBindAttribLocation(programObject, 0, "vPosition");
+	// Bind aPosition to attribute 0 and aTexCoord to attribute 1
+	glBindAttribLocation(programObject, 0, "aPosition");
+	glBindAttribLocation(programObject, 1, "aTexCoord");
 
 	// Link the program
 	glLinkProgram(programObject);
@@ -380,6 +394,10 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 		GLint previous_vp[4];
 		GLint previous_prog;
 		GLint previous_fbo;
+		GLint previous_tex;
+		GLint previous_ab;
+		GLint previous_rbo;
+		GLint previous_vaenabled[2];
 
 		GLenum status;
 		GLuint unity_tex = (GLuint)(size_t)(native_texture_ptr);
@@ -388,11 +406,15 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 		GLuint gst_tex;
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ | GST_MAP_GL);
 		gst_tex = *(guint *)GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0);
-		gst_video_frame_unmap(&video_frame);
 
 		glGetIntegerv(GL_VIEWPORT, previous_vp);
 		glGetIntegerv(GL_CURRENT_PROGRAM, &previous_prog);
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_fbo);
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_tex);
+		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previous_ab);
+		glGetIntegerv(GL_RENDERBUFFER_BINDING, &previous_rbo);
+		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &previous_vaenabled[0]);
+		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &previous_vaenabled[1]);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, gcontext->fbo);
 		glViewport(0, 0, video_info->width, video_info->height);
@@ -407,72 +429,113 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 		glDisable(GL_CULL_FACE);
 		glPolygonOffset(0.0f, 0.0f);
 		glDisable(GL_POLYGON_OFFSET_FILL);
+		glClearColor(1.f, 0.f, 1.f, 1.f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(gcontext->po);
 		if (gcontext->gl->gl_vtable->BindVertexArray)
 			gcontext->gl->gl_vtable->BindVertexArray(gcontext->vao);
-		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, gcontext->vbo);
-		glVertexAttribPointer((GLuint)0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (const GLvoid *)(0));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (const GLvoid *)(2 * sizeof(GLfloat)));
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gst_tex);
+		glUniform1i(gcontext->samplerLoc, 0);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, previous_fbo);
 		glViewport(previous_vp[0], previous_vp[1], previous_vp[2], previous_vp[3]);
-		glUseProgram(previous_prog);
 		if (gcontext->gl->gl_vtable->BindVertexArray)
 			gcontext->gl->gl_vtable->BindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(previous_prog);
+		glBindBuffer(GL_ARRAY_BUFFER, previous_ab);
+		glBindRenderbuffer(GL_RENDERBUFFER, previous_rbo);
+		if (!previous_vaenabled[0])
+			glDisableVertexAttribArray(0);
+		if (!previous_vaenabled[1])
+			glDisableVertexAttribArray(1);
+		glBindTexture(GL_TEXTURE_2D, previous_tex);
+
+		gst_video_frame_unmap(&video_frame);
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_egl(GstElement *pipeline)
+static GUBGraphicContext *gub_create_graphic_context_egl()
 {
 	static const GLfloat vVertices[] = {
-		-1.f, -1.f,
-		-1.f,  1.f,
-		 1.f, -1.f,
-		 1.f,  1.f
+		-1.f, -1.f,   0.f, 0.f,
+		-1.f,  1.f,   0.f, 1.f,
+		 0.f, -1.f,   1.f, 0.f,
+		 0.f,  1.f,   1.f, 1.f
 	};
+	guintptr raw_context;
+	GstStructure *s;
+	GstGLDisplay *display;
+	GstGLContext *gl_context;
+	GUBGraphicContextEGL *gcontext;
 
-	GUBGraphicContextEGL *gcontext = NULL;
-	guintptr raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
-	if (raw_context) {
-		GstStructure *s;
-		GstGLDisplay *display = gst_gl_display_new();
-		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_GLES2);
-		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
-		gub_log("Current GL context is %p (Platform %s API %s)", raw_context,
-			gst_gl_platform_to_string(gst_gl_context_get_gl_platform(gl_context)),
-			gst_gl_api_to_string(gst_gl_context_get_gl_api(gl_context)));
-		s = gst_context_writable_structure(context);
-		gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gl_context, NULL);
-		gst_element_set_context(pipeline, context);
-		gst_context_unref(context);
-		gub_log("Set GL context. Display type is %p", gl_context->display->type);
-
-		gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
-		gcontext->gl = gl_context;
-		gcontext->display = display;
-
-		glGenFramebuffers(1, &gcontext->fbo);
-
-		if (gl_context->gl_vtable->GenVertexArrays)
-			gl_context->gl_vtable->GenVertexArrays(1, &gcontext->vao);
-		if (gcontext->gl->gl_vtable->BindVertexArray)
-			gcontext->gl->gl_vtable->BindVertexArray(gcontext->vao);
-
-		glGenBuffers(1, &gcontext->vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, gcontext->vbo);
-		glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), vVertices, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		gcontext->po = gub_create_program();
-	}
-	else {
+	raw_context = gst_gl_context_get_current_gl_context(GST_GL_PLATFORM_EGL);
+	if (!raw_context) {
 		gub_log("Could not retrieve current EGL context");
+		return NULL;
 	}
+
+	display = (GstGLDisplay *)gst_gl_display_egl_new();
+	gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_GLES2);
+
+	gub_log("Current GL context is %p (GSTGL Platform %s GSTGL API %s)", raw_context,
+		gst_gl_platform_to_string(gst_gl_context_get_gl_platform(gl_context)),
+		gst_gl_api_to_string(gst_gl_context_get_gl_api(gl_context)));
+	gub_log("VENDOR: %s", glGetString(GL_VENDOR));
+	gub_log("RENDERER: %s", glGetString(GL_RENDERER));
+	gub_log("VERSION: %s", glGetString(GL_VERSION));
+	gub_log("GLSL VERSION: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
+	gcontext->gl = gl_context;
+	gcontext->display = display;
+
+	glGenFramebuffers(1, &gcontext->fbo);
+
+	if (gl_context->gl_vtable->GenVertexArrays)
+		gl_context->gl_vtable->GenVertexArrays(1, &gcontext->vao);
+	if (gcontext->gl->gl_vtable->BindVertexArray)
+		gcontext->gl->gl_vtable->BindVertexArray(gcontext->vao);
+
+	glGenBuffers(1, &gcontext->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, gcontext->vbo);
+	glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(GLfloat), vVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	gcontext->po = gub_create_program();
+
+	gcontext->samplerLoc = glGetUniformLocation(gcontext->po, "sTexture");
 
 	return gcontext;
+}
+
+static void gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontext, GstElement *element, const gchar *type)
+{
+	if (type != NULL) {
+		GstContext *context = NULL;
+		if (g_strcmp0(type, GST_GL_DISPLAY_CONTEXT_TYPE) == 0) {
+			context = gst_context_new(GST_GL_DISPLAY_CONTEXT_TYPE, TRUE);
+			gst_context_set_gl_display(context, gcontext->display);
+		}
+		else if (g_strcmp0(type, "gst.gl.app_context") == 0) {
+			GstStructure *s;
+			context = gst_context_new("gst.gl.app_context", TRUE);
+			s = gst_context_writable_structure(context);
+			gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gcontext->gl, NULL);
+		}
+		if (context) {
+			gst_element_set_context(GST_ELEMENT(element), context);
+			gst_context_unref(context);
+			gub_log("Set GL context %s. Display type is %p", type, gcontext->display->type);
+		}
+	}
 }
 
 static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
@@ -499,6 +562,7 @@ GUBGraphicBackend gub_graphic_backend_egl = {
 	/* create_graphic_device   */      NULL,
 	/* destroy_graphic_device  */      NULL,
 	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_egl,
+	/* provide_graphic_context */      (GUBProvideGraphicContextPFN)gub_provide_graphic_context_egl,
 	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_egl,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_egl,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_egl
@@ -510,14 +574,22 @@ GUBGraphicBackend gub_graphic_backend_egl = {
 // --------------------------------------------------- Internal API ---------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------
 
-GUBGraphicContext *gub_create_graphic_context(GstElement *pipeline)
+GUBGraphicContext *gub_create_graphic_context()
 {
 	GUBGraphicContext *gcontext = NULL;
 	if (gub_graphic_backend && gub_graphic_backend->create_graphic_context) {
-		gcontext = gub_graphic_backend->create_graphic_context(pipeline);
+		gcontext = gub_graphic_backend->create_graphic_context();
 	}
 	return gcontext;
 }
+
+void gub_provide_graphic_context(GUBGraphicContext *gcontext, GstElement *element, const gchar *type)
+{
+	if (gub_graphic_backend && gub_graphic_backend->provide_graphic_context) {
+		gub_graphic_backend->provide_graphic_context(gcontext, element, type);
+	}
+}
+
 
 void gub_destroy_graphic_context(GUBGraphicContext *gcontext)
 {

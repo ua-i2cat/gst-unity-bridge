@@ -109,6 +109,7 @@ EXPORT_API void gub_ref()
 		gst_debug_add_log_function((GstLogFunction)gst_debug_gub, NULL, NULL);
 		gst_debug_set_active(TRUE);
 		gst_debug_set_default_threshold(GST_LEVEL_WARNING);
+		gst_debug_set_threshold_for_name("*CONTEXT*", GST_LEVEL_LOG);
 
 #if defined (__ANDROID__)
 		gst_android_register_static_plugins();
