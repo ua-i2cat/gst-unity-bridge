@@ -15,7 +15,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public string m_PipelineDescription = "videotestsrc ! appsink name=sink";
 
     [SerializeField]
-    [Tooltip("Leave alway ON, unless you plan to activate it manually")]
+    [Tooltip("Leave always ON, unless you plan to activate it manually")]
     private bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
