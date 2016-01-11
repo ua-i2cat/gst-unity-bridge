@@ -220,6 +220,7 @@ static GUBGraphicContext *gub_create_graphic_context_opengl()
 		GstStructure *s;
 		GstGLDisplay *display = gst_gl_display_new();
 		GstGLContext *gl_context = gst_gl_context_new_wrapped(display, raw_context, GUB_GL_PLATFORM, GST_GL_API_OPENGL);
+
 /*
 		GstContext *context = gst_context_new("gst.gl.app_context", TRUE);
 		gub_log("Current GL context is %p", raw_context);
@@ -389,6 +390,8 @@ static int gub_create_program()
 
 static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
+	if (!gcontext) return;
+
 	if (native_texture_ptr)
 	{
 		GLint previous_vp[4];
@@ -429,8 +432,6 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 		glDisable(GL_CULL_FACE);
 		glPolygonOffset(0.0f, 0.0f);
 		glDisable(GL_POLYGON_OFFSET_FILL);
-		glClearColor(1.f, 0.f, 1.f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(gcontext->po);
 		if (gcontext->gl->gl_vtable->BindVertexArray)
@@ -467,8 +468,8 @@ static GUBGraphicContext *gub_create_graphic_context_egl()
 	static const GLfloat vVertices[] = {
 		-1.f, -1.f,   0.f, 0.f,
 		-1.f,  1.f,   0.f, 1.f,
-		 0.f, -1.f,   1.f, 0.f,
-		 0.f,  1.f,   1.f, 1.f
+		 1.f, -1.f,   1.f, 0.f,
+		 1.f,  1.f,   1.f, 1.f
 	};
 	guintptr raw_context;
 	GstStructure *s;
@@ -484,7 +485,6 @@ static GUBGraphicContext *gub_create_graphic_context_egl()
 
 	display = (GstGLDisplay *)gst_gl_display_egl_new();
 	gl_context = gst_gl_context_new_wrapped(display, raw_context, GST_GL_PLATFORM_EGL, GST_GL_API_GLES2);
-
 	gub_log("Current GL context is %p (GSTGL Platform %s GSTGL API %s)", raw_context,
 		gst_gl_platform_to_string(gst_gl_context_get_gl_platform(gl_context)),
 		gst_gl_api_to_string(gst_gl_context_get_gl_api(gl_context)));
@@ -518,6 +518,8 @@ static GUBGraphicContext *gub_create_graphic_context_egl()
 
 static void gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontext, GstElement *element, const gchar *type)
 {
+	if (!gcontext) return;
+
 	if (type != NULL) {
 		GstContext *context = NULL;
 		if (g_strcmp0(type, GST_GL_DISPLAY_CONTEXT_TYPE) == 0) {

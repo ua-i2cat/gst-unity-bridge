@@ -154,8 +154,6 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	GstVideoInfo info;
 	GstState state;
 
-	gub_log("grab_frame");
-
 	if (!pipeline->graphic_context) {
 		pipeline->graphic_context = gub_create_graphic_context();
 	}
@@ -219,8 +217,6 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight)
 {
-	gub_log("blit_image");
-
 	if (!pipeline->last_sample) {
 		return;
 	}
