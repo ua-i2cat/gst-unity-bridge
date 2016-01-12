@@ -62,7 +62,7 @@
     <Import Project="$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-1.0.props" Condition="exists('$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-1.0.props')" />
     <Import Project="$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-video-1.0.props" Condition="exists('$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-video-1.0.props')" />
     <Import Project="$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-net-1.0.props" Condition="exists('$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-net-1.0.props')" />
-    <Import Project="$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-gl-1.0.props" Condition="exists('$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-gl-1.0.props')"/>
+    <Import Project="$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-gl-1.0.props" Condition="exists('$(GSTREAMER_1_0_ROOT_X86)\share\vs\2010\libs\gstreamer-gl-1.0.props')" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -125,6 +125,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86_64</Command>
+      <Message>Copying to test folder...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -159,6 +163,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86_64</Command>
+      <Message>Copying to test folder...</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="gub_graphics.c" />
