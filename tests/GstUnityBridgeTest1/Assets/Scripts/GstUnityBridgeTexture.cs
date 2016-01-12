@@ -10,9 +10,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
 {
     public bool m_FlipX = false;
     public bool m_FlipY = false;
-    [TextArea(1,8)]
-    [Tooltip("Valid GStreamer pipeline ending with a fakesink named 'sink'")]
-    public string m_PipelineDescription = "videotestsrc ! appsink name=sink";
+    [Tooltip("URI to get the stream from")]
+    public string m_URI = "";
 
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
@@ -64,7 +63,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (m_InitializeOnStart && !m_HasBeenInitialized)
         {
             Initialize();
-            Setup(m_PipelineDescription);
+            Setup(m_URI);
             Play();
         }
     }
@@ -86,12 +85,12 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_Texture.filterMode = FilterMode.Point;
     }
 
-    public void Setup(string _PipelineDescription)
+    public void Setup(string _URI)
     {
-        m_PipelineDescription = _PipelineDescription;
+        m_URI = _URI;
         if (m_Pipeline.IsLoaded || m_Pipeline.IsPlaying)
             m_Pipeline.Close();
-        m_Pipeline.Setup(m_PipelineDescription, m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
+        m_Pipeline.Setup(m_URI, m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
     }
 
     public void Destroy()

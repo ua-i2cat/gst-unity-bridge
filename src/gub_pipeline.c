@@ -21,6 +21,7 @@ typedef struct _GUBPipeline {
 	int last_width;
 	int last_height;
 	GstClock *net_clock;
+	gboolean playing;
 } GUBPipeline;
 
 EXPORT_API GUBPipeline *gub_pipeline_create()
@@ -94,15 +95,15 @@ static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipelin
 	return FALSE;
 }
 
-EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_description, const gchar *net_clock_addr, int net_clock_port)
+EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, const gchar *net_clock_addr, int net_clock_port)
 {
 	GError *err = NULL;
-	GstElement *source;
+	GstElement *vsink;
 	gchar *full_pipeline_description = NULL;
 	GstBus *bus = NULL;
 
-	full_pipeline_description = g_strdup_printf(pipeline_description, gub_get_video_branch_description());
-	gub_log("Using pipeline %s", full_pipeline_description);
+	full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
+	gub_log("Using pipeline: %s", full_pipeline_description);
 
 	pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
 	g_free(full_pipeline_description);
@@ -111,18 +112,17 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *pipeline_
 		return;
 	}
 
+	vsink = gst_parse_bin_from_description(gub_get_video_branch_description(), TRUE, NULL);
+	gub_log("Using video sink: %s", gub_get_video_branch_description());
+	g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
+	g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
+
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
 	gst_bus_enable_sync_message_emission(bus);
 	g_signal_connect(bus, "sync-message", G_CALLBACK(sync_bus_call), pipeline);
 	gst_object_unref(bus);
 
-	source = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "source");
-	if (source) {
-		g_signal_connect(source, "source-setup", G_CALLBACK(source_created), NULL);
-		gst_object_unref(source);
-	} else {
-		gub_log("Pipeline does not contain a source named 'source', network properties will not be set");
-	}
+	g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), NULL);
 
 	if (net_clock_addr != NULL) {
 		gint64 start, stop;
@@ -152,17 +152,16 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "sink");
 	GstCaps *last_caps = NULL;
 	GstVideoInfo info;
-	GstState state;
 
 	if (!pipeline->graphic_context) {
 		pipeline->graphic_context = gub_create_graphic_context();
 	}
 
-	if (gst_element_get_state (pipeline->pipeline, &state, NULL, 0) != GST_STATE_CHANGE_SUCCESS
-		|| state != GST_STATE_PLAYING) {
+	if (pipeline->playing == FALSE) {
 		gub_log("Setting pipeline to PLAYING");
 		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 		gub_log("State change completed");
+		pipeline->playing = TRUE;
 	}
 
 	if (pipeline->last_sample) {
@@ -178,13 +177,15 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	g_object_get(sink, "last-sample", &pipeline->last_sample, NULL);
 	gst_object_unref(sink);
 	if (!pipeline->last_sample) {
-		gub_log("Could not read property 'last-sample' from sink");
+		gub_log("Could not read property 'last-sample' from sink %s",
+			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
 		return 0;
 	}
 
 	last_caps = gst_sample_get_caps(pipeline->last_sample);
 	if (!last_caps) {
-		gub_log("Sample contains no caps");
+		gub_log("Sample contains no caps in sink %s",
+			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
 		gst_sample_unref(pipeline->last_sample);
 		pipeline->last_sample = NULL;
 		return 0;
@@ -194,7 +195,9 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 	if (info.finfo->format != GST_VIDEO_FORMAT_RGB ||
 		info.finfo->bits != 8) {
-		gub_log("Buffer format is not RGB24");
+		gub_log("Buffer format is not RGB24 (it is %s) in sink %s",
+			gst_video_format_to_string(info.finfo->format),
+			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
 		gst_sample_unref(pipeline->last_sample);
 		pipeline->last_sample = NULL;
 		return 0;
