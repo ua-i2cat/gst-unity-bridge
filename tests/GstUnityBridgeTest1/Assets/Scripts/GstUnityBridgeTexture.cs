@@ -3,7 +3,7 @@
  * (C) 2015 i2CAT
  */
 
- using UnityEngine;
+using UnityEngine;
 
 [DisallowMultipleComponent]
 public class GstUnityBridgeTexture : MonoBehaviour
@@ -12,6 +12,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool m_FlipY = false;
     [Tooltip("URI to get the stream from")]
     public string m_URI = "";
+    [Tooltip("SDP index of the video stream to use")]
+    public int m_VideoIndex = 0;
+    [Tooltip("SDP index of the audio stream to use")]
+    public int m_AudioIndex = 0;
 
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
@@ -63,7 +67,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (m_InitializeOnStart && !m_HasBeenInitialized)
         {
             Initialize();
-            Setup(m_URI);
+            Setup(m_URI, m_VideoIndex, m_AudioIndex);
             Play();
         }
     }
@@ -85,12 +89,15 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_Texture.filterMode = FilterMode.Point;
     }
 
-    public void Setup(string _URI)
+    public void Setup(string _URI, int _VideoIndex, int _AudioIndex)
     {
         m_URI = _URI;
+        m_VideoIndex = _VideoIndex;
+        m_AudioIndex = _AudioIndex;
         if (m_Pipeline.IsLoaded || m_Pipeline.IsPlaying)
             m_Pipeline.Close();
-        m_Pipeline.Setup(m_URI, m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
+        m_Pipeline.Setup(m_URI, m_VideoIndex, m_AudioIndex,
+            m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
     }
 
     public void Destroy()

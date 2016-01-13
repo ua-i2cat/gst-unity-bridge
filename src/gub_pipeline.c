@@ -22,6 +22,8 @@ typedef struct _GUBPipeline {
 	int last_height;
 	GstClock *net_clock;
 	gboolean playing;
+	int video_index;
+	int audio_index;
 } GUBPipeline;
 
 EXPORT_API GUBPipeline *gub_pipeline_create()
@@ -64,7 +66,16 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
 {
 }
 
-static void source_created(GstElement *pipe, GstElement *source)
+static gboolean select_stream (GstBin *rtspsrc, guint num, GstCaps *caps, GUBPipeline *pipeline)
+{
+	gboolean select = (num == pipeline->video_index || num == pipeline->audio_index);
+	gchar *caps_str = gst_caps_to_string(caps);
+	gub_log("Found stream #%d (%s): %s", num, select ? "(SELECTED)" : "(IGNORED)", caps_str);
+	g_free(caps_str);
+	return select;
+}
+
+static void source_created(GstBin *playbin, GstElement *source, GUBPipeline *pipeline)
 {
 	gub_log("Setting properties to source %s", gst_plugin_feature_get_name(gst_element_get_factory(source)));
 	g_object_set(source, "latency", MAX_JITTERBUFFER_DELAY_MS, NULL);
@@ -72,6 +83,8 @@ static void source_created(GstElement *pipe, GstElement *source)
 	g_object_set(source, "buffer-mode", 4, NULL);
 	g_object_set(source, "ntp-sync", TRUE, NULL);
 //	g_object_set(source, "protocols", 4, NULL);
+
+	g_signal_connect(source, "select-stream", G_CALLBACK(select_stream), pipeline);
 }
 
 static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipeline)
@@ -95,7 +108,7 @@ static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipelin
 	return FALSE;
 }
 
-EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, const gchar *net_clock_addr, int net_clock_port)
+EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index, const gchar *net_clock_addr, int net_clock_port)
 {
 	GError *err = NULL;
 	GstElement *vsink;
@@ -117,12 +130,15 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, cons
 	g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
 	g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
 
+	pipeline->video_index = video_index;
+	pipeline->audio_index = audio_index;
+
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
 	gst_bus_enable_sync_message_emission(bus);
 	g_signal_connect(bus, "sync-message", G_CALLBACK(sync_bus_call), pipeline);
 	gst_object_unref(bus);
 
-	g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), NULL);
+	g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), pipeline);
 
 	if (net_clock_addr != NULL) {
 		gint64 start, stop;
