@@ -12,9 +12,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool m_FlipY = false;
     [Tooltip("URI to get the stream from")]
     public string m_URI = "";
-    [Tooltip("SDP index of the video stream to use")]
+    [Tooltip("SDP index of the video stream to use (-1 disables video)")]
     public int m_VideoIndex = 0;
-    [Tooltip("SDP index of the audio stream to use")]
+    [Tooltip("SDP index of the audio stream to use (-1 disables audio)")]
     public int m_AudioIndex = 0;
 
     [SerializeField]

@@ -70,7 +70,7 @@ static gboolean select_stream (GstBin *rtspsrc, guint num, GstCaps *caps, GUBPip
 {
 	gboolean select = (num == pipeline->video_index || num == pipeline->audio_index);
 	gchar *caps_str = gst_caps_to_string(caps);
-	gub_log("Found stream #%d (%s): %s", num, select ? "(SELECTED)" : "(IGNORED)", caps_str);
+	gub_log("Found stream #%d (%s): %s", num, select ? "SELECTED" : "IGNORED", caps_str);
 	g_free(caps_str);
 	return select;
 }
