@@ -86,7 +86,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_Texture.Resize(m_Width, m_Height, TextureFormat.RGB24, false);
             m_Texture.Apply(false, false);
         }
-        m_Texture.filterMode = FilterMode.Point;
+        m_Texture.filterMode = FilterMode.Bilinear;
     }
 
     public void Setup(string _URI, int _VideoIndex, int _AudioIndex)
