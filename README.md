@@ -93,8 +93,5 @@ gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 g
 
 - Frame data is extracted from GStreamer into main memory and passed onto Unity. On platforms like Android, where both video decoding and rendering are probably happening on the GPU, this is an enormous waste of time (On a Samsung Galaxy S3, the sample project consumes about 75% of CPU).
 - Due to some unknown issue with the Android GStreamer audio sink, its presence breaks network synchronization.
-
-## 4. TODO
-
-- Avoid copying frames from and to main memory when a hardware decoder is being used.
-- Fix network synchronization on Android when audio is rendered.
+- The plugin does not work from within the Unity3D Editor. The project has to be built and executed.
+- The Unity3D Editor loads all native plugins at startup, so it does not pick up changes you make later on. https://github.com/mrayy/mrayGStreamerUnity already took care of this.
