@@ -96,6 +96,7 @@ EXPORT_API void gub_ref()
 	gub_log("GST ref");
 	if (gub_ref_count == 0) {
 		GError *err = 0;
+		gchar *version = NULL;
 
 		if (!gst_init_check(0, 0, &err)) {
 			gub_log("Failed to initialize GStreamer: %s", err ? err->message : "<No error message>");
@@ -121,7 +122,9 @@ EXPORT_API void gub_ref()
 			return;
 		}
 
-		gub_log("GStreamer initialized");
+		version = gst_version_string();
+		gub_log("%s initialized", version);
+		g_free(version);
 	}
 
 	gub_ref_count++;
