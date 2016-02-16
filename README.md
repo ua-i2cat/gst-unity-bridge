@@ -27,7 +27,7 @@ A number of properties are available:
   - **FlipY**: Invert texture vertically
   - **URI**: The URI of the media stream. GStreamer understands several protocols, for example, rtsp:// or http://.
   - **Video Index**: Which stream to use when the input URI contains more than one video stream. This is a zero-based index. -1 disables video altogether.
-  - **Audio Index**: Which stream to use when the input URI contains more than one audio stream. This is a zero-based index. -1 disables video altogether.
+  - **Audio Index**: Which stream to use when the input URI contains more than one audio stream. This is a zero-based index. -1 disables audio altogether.
   - **Initialize On Start**: Whether the GStreamer pipeline must be created and set to PLAYING when the scene is loaded. Leave this on unless you plan to activate the pipeline manually.
 
 More properties are available, related to network sycnhronization, detailed below.
