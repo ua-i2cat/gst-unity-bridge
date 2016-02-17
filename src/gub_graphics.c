@@ -68,18 +68,6 @@ typedef enum UnityGfxDeviceEventType {
 	kUnityGfxDeviceEventAfterReset = 3,
 } UnityGfxDeviceEventType;
 
-// Add alpha channel, OMFG
-static void gub_add_alpha_channel(const char *src, char *dst, int size)
-{
-	int i;
-	for (i = 0; i < size; i++) {
-		dst[i * 4 + 0] = src[i * 3 + 0];
-		dst[i * 4 + 1] = src[i * 3 + 1];
-		dst[i * 4 + 2] = src[i * 3 + 2];
-		dst[i * 4 + 3] = 255;
-	}
-}
-
 #if SUPPORT_D3D9
 // --------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------- D3D9 SUPPORT ---------------------------------------------------
@@ -98,7 +86,7 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *vid
 		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
 		d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, 0);
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
-		gub_add_alpha_channel(GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), (char*)lr.pBits, video_info->width * video_info->height);
+		memcpy((char*)lr.pBits, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info->width * video_info->height * 4);
 		gst_video_frame_unmap(&video_frame);
 		d3dtex->lpVtbl->UnlockRect(d3dtex, 0);
 	}
@@ -106,7 +94,7 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *vid
 
 static const gchar *gub_get_video_branch_description_d3d9()
 {
-	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+	return "videoconvert ! video/x-raw,format=BGRA  ! fakesink sync=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d9 = {
