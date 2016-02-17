@@ -195,7 +195,6 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
 EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int *height)
 {
 	GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "sink");
-	GstCaps *last_caps = NULL;
 	GstVideoInfo info;
 
 	if (!pipeline->graphic_context) {
@@ -224,27 +223,6 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	if (!pipeline->last_sample) {
 		gub_log("Could not read property 'last-sample' from sink %s",
 			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
-		return 0;
-	}
-
-	last_caps = gst_sample_get_caps(pipeline->last_sample);
-	if (!last_caps) {
-		gub_log("Sample contains no caps in sink %s",
-			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
-		gst_sample_unref(pipeline->last_sample);
-		pipeline->last_sample = NULL;
-		return 0;
-	}
-
-	gst_video_info_from_caps(&info, last_caps);
-
-	if (info.finfo->format != GST_VIDEO_FORMAT_RGB ||
-		info.finfo->bits != 8) {
-		gub_log("Buffer format is not RGB24 (it is %s) in sink %s",
-			gst_video_format_to_string(info.finfo->format),
-			gst_plugin_feature_get_name(gst_element_get_factory(sink)));
-		gst_sample_unref(pipeline->last_sample);
-		pipeline->last_sample = NULL;
 		return 0;
 	}
 

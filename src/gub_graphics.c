@@ -139,13 +139,9 @@ static void gub_copy_texture_d3d11(GUBGraphicContext *gcontext, GstVideoInfo *vi
 	// update native texture from code
 	if (native_texture_ptr) {
 		GstVideoFrame video_frame;
-
-		char *data2 = malloc(video_info->width * video_info->height * 4);
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
-		gub_add_alpha_channel(GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), data2, video_info->width * video_info->height);
+		ctx->lpVtbl->UpdateSubresource(ctx, (ID3D11Resource *)native_texture_ptr, 0, NULL, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info->width * 4, 0);
 		gst_video_frame_unmap(&video_frame);
-		ctx->lpVtbl->UpdateSubresource(ctx, (ID3D11Resource *)native_texture_ptr, 0, NULL, data2, video_info->width * 4, 0);
-		free(data2);
 	}
 	ctx->lpVtbl->Release(ctx);
 }
@@ -164,7 +160,7 @@ static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
 
 static const gchar *gub_get_video_branch_description_d3d11()
 {
-	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+	return "videoconvert ! video/x-raw,format=RGBA  ! fakesink sync=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d11 = {
