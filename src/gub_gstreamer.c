@@ -93,7 +93,7 @@ static void gst_debug_gub(GstDebugCategory * category, GstDebugLevel level,
 
 EXPORT_API void gub_ref()
 {
-	gub_log("GST ref");
+	gub_log("GST ref (%d -> %d)", gub_ref_count, gub_ref_count + 1);
 	if (gub_ref_count == 0) {
 		GError *err = 0;
 		gchar *version = NULL;
@@ -132,7 +132,7 @@ EXPORT_API void gub_ref()
 
 EXPORT_API void gub_unref()
 {
-	gub_log("GST unref");
+	gub_log("GST unref (%d -> %d)", gub_ref_count, gub_ref_count - 1);
 	if (gub_ref_count == 0) {
 		gub_log("Trying to unref past zero");
 		return;

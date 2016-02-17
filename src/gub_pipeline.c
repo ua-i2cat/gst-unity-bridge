@@ -22,6 +22,7 @@ typedef struct _GUBPipeline {
 	int last_height;
 	GstClock *net_clock;
 	gboolean playing;
+	gboolean play_requested;
 	int video_index;
 	int audio_index;
 } GUBPipeline;
@@ -33,37 +34,61 @@ EXPORT_API GUBPipeline *gub_pipeline_create()
 	return pipeline;
 }
 
-EXPORT_API void gub_pipeline_destroy(GUBPipeline *pipeline)
+EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
 {
 	gub_destroy_graphic_context(pipeline->graphic_context);
-	gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_NULL);
+	if (pipeline->pipeline) {
+		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_NULL);
+	}
+	if (pipeline->last_sample) {
+		gst_sample_unref(pipeline->last_sample);
+	}
+	memset(pipeline, 0, sizeof(GUBPipeline));
+}
+
+EXPORT_API void gub_pipeline_destroy(GUBPipeline *pipeline)
+{
+	gub_pipeline_close(pipeline);
 	free(pipeline);
 }
 
 EXPORT_API void gub_pipeline_play(GUBPipeline *pipeline)
 {
+	/* We cannot start playing immediately. This might be called on Script Start(), and,
+	on Android, the application has not yet provided a GL context at that point.
+	Instead, we will start the pipeline from the grab_frame method, which is called
+	when the app has initialized GL (Script OnGui). */
+	pipeline->play_requested = TRUE;
 }
 
 EXPORT_API void gub_pipeline_pause(GUBPipeline *pipeline)
 {
+	if (pipeline->pipeline) {
+		gub_log("Setting pipeline to PAUSED");
+		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PAUSED);
+		gub_log("State change completed");
+		pipeline->play_requested = FALSE;
+		pipeline->playing = FALSE;
+	}
 }
 
 EXPORT_API void gub_pipeline_stop(GUBPipeline *pipeline)
 {
+	if (pipeline->pipeline) {
+		gub_log("Setting pipeline to NULL");
+		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_NULL);
+		gub_log("State change completed");
+	}
 }
 
 EXPORT_API gint32 gub_pipeline_is_loaded(GUBPipeline *pipeline)
 {
-	return FALSE;
+	return (pipeline->pipeline != NULL);
 }
 
 EXPORT_API gint32 gub_pipeline_is_playing(GUBPipeline *pipeline)
 {
-	return FALSE;
-}
-
-EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
-{
+	return pipeline->playing;
 }
 
 static gboolean select_stream (GstBin *rtspsrc, guint num, GstCaps *caps, GUBPipeline *pipeline)
@@ -114,6 +139,10 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
 	GstElement *vsink;
 	gchar *full_pipeline_description = NULL;
 	GstBus *bus = NULL;
+
+	if (pipeline->pipeline) {
+		gub_pipeline_close(pipeline);
+	}
 
 	full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
 	gub_log("Using pipeline: %s", full_pipeline_description);
@@ -173,7 +202,7 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 		pipeline->graphic_context = gub_create_graphic_context();
 	}
 
-	if (pipeline->playing == FALSE) {
+	if (pipeline->playing == FALSE && pipeline->play_requested == TRUE) {
 		gub_log("Setting pipeline to PLAYING");
 		gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
 		gub_log("State change completed");
