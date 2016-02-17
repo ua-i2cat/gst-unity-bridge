@@ -4,6 +4,13 @@
  */
 
 using UnityEngine;
+using System;
+using System.IO;
+
+#if UNITY_EDITOR
+using UnityEditor;
+[InitializeOnLoad]
+#endif
 
 [DisallowMultipleComponent]
 public class GstUnityBridgeTexture : MonoBehaviour
@@ -34,6 +41,27 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
+
+#if UNITY_EDITOR
+    static GstUnityBridgeTexture()
+    {
+        // Setup the PATH environment variable when running from within the Unity Editor,
+        // so it can find the GstUnityBridge dll.
+        var currentPath = Environment.GetEnvironmentVariable("PATH",
+            EnvironmentVariableTarget.Process);
+        var dllPath = "";
+
+#if UNITY_EDITOR_32
+        dllPath = Application.dataPath + "/Plugins/x86";
+#elif UNITY_EDITOR_64
+        dllPath = Application.dataPath + "/Plugins/x86_64";
+#endif
+
+        if (currentPath != null && currentPath.Contains(dllPath) == false)
+            Environment.SetEnvironmentVariable("PATH", currentPath + Path.PathSeparator
+                + dllPath, EnvironmentVariableTarget.Process);
+    }
+#endif
 
     public void Initialize()
     {
