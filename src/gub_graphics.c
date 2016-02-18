@@ -94,7 +94,7 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *vid
 
 static const gchar *gub_get_video_branch_description_d3d9()
 {
-	return "videoconvert ! video/x-raw,format=BGRA  ! fakesink sync=1 name=sink";
+	return "videoconvert ! video/x-raw,format=BGRA  ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d9 = {
@@ -148,7 +148,7 @@ static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
 
 static const gchar *gub_get_video_branch_description_d3d11()
 {
-	return "videoconvert ! video/x-raw,format=RGBA  ! fakesink sync=1 name=sink";
+	return "videoconvert ! video/x-raw,format=RGBA  ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d11 = {
@@ -237,7 +237,7 @@ static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext
 
 static const gchar *gub_get_video_branch_description_opengl()
 {
-	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 name=sink";
+	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_opengl = {
@@ -541,7 +541,7 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 
 static const gchar *gub_get_video_branch_description_egl()
 {
-	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D  ! fakesink sync=1 name=sink";
+	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D  ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_egl = {
