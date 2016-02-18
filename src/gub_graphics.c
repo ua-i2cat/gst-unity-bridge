@@ -612,12 +612,15 @@ const gchar *gub_get_video_branch_description()
 {
 	const gchar *description = NULL;
 
+#if SUPPORT_D3D9
 	if (!gub_graphic_backend) {
 		// Not much more we can do... Unity is not calling UnitySetGraphicsDevice from within the Editor,
 		// and all other backends require a Device or a Context to work.
 		gub_log("No graphic backend defined. Assuming we are in the Unity Editor using DX9.");
 		gub_graphic_backend = &gub_graphic_backend_d3d9;
 	}
+#endif
+
 	if (gub_graphic_backend && gub_graphic_backend->get_video_branch_description) {
 		description = gub_graphic_backend->get_video_branch_description();
 	}
