@@ -17,7 +17,7 @@
 /* Created from the gst pipeline */
 typedef void GUBGraphicContext;
 
-GUBGraphicContext *gub_create_graphic_context();
+GUBGraphicContext *gub_create_graphic_context(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom);
 void gub_provide_graphic_context(GUBGraphicContext *gcontext, GstElement *element, const gchar *type);
 void gub_destroy_graphic_context(GUBGraphicContext *context);
 gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *texture_native_ptr);

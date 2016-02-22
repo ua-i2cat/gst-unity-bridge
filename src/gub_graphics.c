@@ -24,7 +24,7 @@ typedef void GUBGraphicDevice;
 
 typedef GUBGraphicDevice* (*GUBCreateGraphicDevicePFN)(void* device, int deviceType);
 typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
-typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)();
+typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height);
 typedef void (*GUBProvideGraphicContextPFN)(GUBGraphicContext *gcontext, GstElement *element, const gchar *type);
 typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
 typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr);
@@ -74,7 +74,29 @@ typedef enum UnityGfxDeviceEventType {
 // --------------------------------------------------------------------------------------------------------------------
 #include <d3d9.h>
 
-static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
+typedef struct _GUBGraphicContextD3D9 {
+	float crop_left;
+	float crop_top;
+	float crop_right;
+	float crop_bottom;
+} GUBGraphicContextD3D9;
+
+static GUBGraphicDevice *gub_create_graphic_context_d3d9(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom)
+{
+	GUBGraphicContextD3D9 *gcontext = (GUBGraphicContextD3D9 *)malloc(sizeof(GUBGraphicContextD3D9));
+	gcontext->crop_left = crop_left;
+	gcontext->crop_top = crop_top;
+	gcontext->crop_right = crop_right;
+	gcontext->crop_bottom = crop_bottom;
+	return gcontext;
+}
+
+static void gub_destroy_graphic_context_d3d9(GUBGraphicContextD3D9 *gcontext)
+{
+	free(gcontext);
+}
+
+static void gub_copy_texture_d3d9(GUBGraphicContextD3D9 *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
 	static const GUID GUB_IID_IDirect3DTexture9 = { 0x85c31227, 0x3de5, 0x4f00, 0x9b, 0x3a, 0xf1, 0x1a, 0xc3, 0x8c, 0x18, 0xb5 };
 
@@ -94,7 +116,21 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *vid
 		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
 		d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, 0);
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
-		memcpy((char*)lr.pBits, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info->width * video_info->height * 4);
+		if (gcontext->crop_left == 0 && gcontext->crop_top == 0 && gcontext->crop_right == 0 && gcontext->crop_bottom == 0) {
+			memcpy((char*)lr.pBits, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info->width * video_info->height * 4);
+		} else {
+			int left   = (int)(video_info->width  * gcontext->crop_left);
+			int top    = (int)(video_info->height * gcontext->crop_top);
+			int width  = (int)(video_info->width  * (1 - gcontext->crop_left - gcontext->crop_right));
+			int height = (int)(video_info->height * (1 - gcontext->crop_top - gcontext->crop_bottom));
+			char *dst_ptr = (char*)lr.pBits;
+			char *src_ptr = (char *)GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0) + (top * video_info->width + left) * 4;
+			int y;
+
+			for (y = 0; y < height; y++, dst_ptr += lr.Pitch, src_ptr += video_info->width * 4) {
+				memcpy(dst_ptr, src_ptr, width * 4);
+			}
+		}
 		gst_video_frame_unmap(&video_frame);
 		d3dtex->lpVtbl->UnlockRect(d3dtex, 0);
 	}
@@ -102,15 +138,15 @@ static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *vid
 
 static const gchar *gub_get_video_branch_description_d3d9()
 {
-	return "videoconvert ! video/x-raw,format=BGRA  ! fakesink sync=1 qos=1 name=sink";
+	return "videoconvert ! video/x-raw,format=BGRA ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d9 = {
 	/* create_graphic_device   */      NULL,
 	/* destroy_graphic_device  */      NULL,
-	/* create_graphic_context  */      NULL,
+	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_d3d9,
 	/* provide_graphic_context */      NULL,
-	/* destroy_graphic_context */      NULL,
+	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_d3d9,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d9,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d9
 };
@@ -127,11 +163,51 @@ typedef struct _GUBGraphicDeviceD3D11 {
 	ID3D11Device* d3d11device;
 } GUBGraphicDeviceD3D11;
 
-static void gub_copy_texture_d3d11(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
+typedef struct _GUBGraphicContextD3D11 {
+	float crop_left;
+	float crop_top;
+	float crop_right;
+	float crop_bottom;
+	GstPipeline *pipeline;
+	gboolean crop_setup;
+} GUBGraphicContextD3D11;
+
+static GUBGraphicDevice *gub_create_graphic_context_d3d11(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom)
+{
+	GUBGraphicContextD3D11 *gcontext = (GUBGraphicContextD3D11 *)malloc(sizeof(GUBGraphicContextD3D11));
+	gcontext->crop_left = crop_left;
+	gcontext->crop_top = crop_top;
+	gcontext->crop_right = crop_right;
+	gcontext->crop_bottom = crop_bottom;
+	gcontext->crop_setup = FALSE;
+	gcontext->pipeline = pipeline;
+	return gcontext;
+}
+
+static void gub_destroy_graphic_context_d3d11(GUBGraphicContextD3D11 *gcontext)
+{
+	free(gcontext);
+}
+
+static void gub_copy_texture_d3d11(GUBGraphicContextD3D11 *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
 	GUBGraphicDeviceD3D11* gdevice = (GUBGraphicDeviceD3D11*)gub_graphic_device;
 	ID3D11DeviceContext* ctx = NULL;
 	gdevice->d3d11device->lpVtbl->GetImmediateContext(gdevice->d3d11device, &ctx);
+	if (!gcontext->crop_setup) {
+		GstElement *crop;
+		crop = gst_bin_get_by_name(GST_BIN(gcontext->pipeline), "crop");
+		if (crop) {
+			g_object_set(crop,
+				"left",   (int)(video_info->width *  gcontext->crop_left),
+				"top",    (int)(video_info->height * gcontext->crop_top),
+				"right",  (int)(video_info->width *  gcontext->crop_right),
+				"bottom", (int)(video_info->height * gcontext->crop_bottom),
+				NULL);
+			gst_object_unref(crop);
+		}
+		gcontext->crop_setup = TRUE;
+	}
 	// update native texture from code
 	if (native_texture_ptr) {
 		GstVideoFrame video_frame;
@@ -156,15 +232,15 @@ static void gub_destroy_graphic_device_d3d11(GUBGraphicDeviceD3D11 *gdevice)
 
 static const gchar *gub_get_video_branch_description_d3d11()
 {
-	return "videoconvert ! video/x-raw,format=RGBA  ! fakesink sync=1 qos=1 name=sink";
+	return "videoconvert ! video/x-raw,format=RGBA ! videocrop name=crop ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_d3d11 = {
 	/* create_graphic_device   */      (GUBCreateGraphicDevicePFN)gub_create_graphic_device_d3d11,
 	/* destroy_graphic_device  */      (GUBDestroyGraphicDevicePFN)gub_destroy_graphic_device_d3d11,
-	/* create_graphic_context  */      NULL,
+	/* create_graphic_context  */      (GUBCreateGraphicContextPFN)gub_create_graphic_context_d3d11,
 	/* provide_graphic_context */      NULL,
-	/* destroy_graphic_context */      NULL,
+	/* destroy_graphic_context */      (GUBDestroyGraphicContextPFN)gub_destroy_graphic_context_d3d11,
 	/* copy_texture */                 (GUBCopyTexturePFN)gub_copy_texture_d3d11,
 	/* get_video_branch_description */ (GUBGetVideoBranchDescriptionPFN)gub_get_video_branch_description_d3d11
 };
@@ -204,7 +280,7 @@ static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, GstVideoInfo *v
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_opengl()
+static GUBGraphicContext *gub_create_graphic_context_opengl(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
 {
 	GUBGraphicContextOpenGL *gcontext = NULL;
 	guintptr raw_context = gst_gl_context_get_current_gl_context(GUB_GL_PLATFORM);
@@ -245,7 +321,7 @@ static void gub_destroy_graphic_context_opengl(GUBGraphicContextOpenGL *gcontext
 
 static const gchar *gub_get_video_branch_description_opengl()
 {
-	return "videoconvert ! video/x-raw,format=RGB  ! fakesink sync=1 qos=1 name=sink";
+	return "videoconvert ! video/x-raw,format=RGB ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_opengl = {
@@ -455,7 +531,7 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_egl()
+static GUBGraphicContext *gub_create_graphic_context_egl(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
 {
 	static const GLfloat vVertices[] = {
 		-1.f, -1.f,   0.f, 0.f,
@@ -549,7 +625,7 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 
 static const gchar *gub_get_video_branch_description_egl()
 {
-	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D  ! fakesink sync=1 qos=1 name=sink";
+	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_egl = {
@@ -568,11 +644,11 @@ GUBGraphicBackend gub_graphic_backend_egl = {
 // --------------------------------------------------- Internal API ---------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------
 
-GUBGraphicContext *gub_create_graphic_context()
+GUBGraphicContext *gub_create_graphic_context(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
 {
 	GUBGraphicContext *gcontext = NULL;
 	if (gub_graphic_backend && gub_graphic_backend->create_graphic_context) {
-		gcontext = gub_graphic_backend->create_graphic_context();
+		gcontext = gub_graphic_backend->create_graphic_context(pipeline, crop_x, crop_y, crop_width, crop_height);
 	}
 	return gcontext;
 }

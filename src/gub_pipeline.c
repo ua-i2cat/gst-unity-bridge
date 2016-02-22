@@ -15,16 +15,19 @@
 
 typedef struct _GUBPipeline {
 	GUBGraphicContext *graphic_context;
+	gboolean supports_cropping_blit;
 
 	GstElement *pipeline;
 	GstSample *last_sample;
-	int last_width;
-	int last_height;
 	GstClock *net_clock;
 	gboolean playing;
 	gboolean play_requested;
 	int video_index;
 	int audio_index;
+	float video_crop_left;
+	float video_crop_top;
+	float video_crop_right;
+	float video_crop_bottom;
 } GUBPipeline;
 
 EXPORT_API GUBPipeline *gub_pipeline_create()
@@ -133,7 +136,9 @@ static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipelin
 	return FALSE;
 }
 
-EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index, const gchar *net_clock_addr, int net_clock_port)
+EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
+	const gchar *net_clock_addr, int net_clock_port,
+	float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
 	GError *err = NULL;
 	GstElement *vsink;
@@ -159,8 +164,24 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
 	g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
 	g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
 
+	// If the video branch does not have a "videocrop" element, we assume this graphic backend
+	// is doing cropping during blitting.
+	if (g_strstr_len(gub_get_video_branch_description(), -1, "videocrop") == NULL) {
+		pipeline->supports_cropping_blit = TRUE;
+	}
+	gub_log("Video branch %s cropping and blitting in one operation",
+		pipeline->supports_cropping_blit ? "supports" : "does not support");
+
 	pipeline->video_index = video_index;
 	pipeline->audio_index = audio_index;
+
+	// Only Enable cropping if it makes sense
+	if (crop_left + crop_right < 1 && crop_top + crop_bottom < 1) {
+		pipeline->video_crop_left = crop_left;
+		pipeline->video_crop_top = crop_top;
+		pipeline->video_crop_right = crop_right;
+		pipeline->video_crop_bottom = crop_bottom;
+	}
 
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
 	gst_bus_enable_sync_message_emission(bus);
@@ -199,7 +220,9 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	GstVideoInfo info;
 
 	if (!pipeline->graphic_context) {
-		pipeline->graphic_context = gub_create_graphic_context();
+		pipeline->graphic_context = gub_create_graphic_context(
+			GST_PIPELINE(pipeline->pipeline),
+			pipeline->video_crop_left, pipeline->video_crop_top, pipeline->video_crop_right, pipeline->video_crop_bottom);
 	}
 
 	if (pipeline->playing == FALSE && pipeline->play_requested == TRUE) {
@@ -227,7 +250,6 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 		return 0;
 	}
 
-
 	last_caps = gst_sample_get_caps(pipeline->last_sample);
 	if (!last_caps) {
 		gub_log("Sample contains no caps in sink %s",
@@ -240,6 +262,7 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	gst_video_info_from_caps(&info, last_caps);
 
 #if 0
+	// Uncomment to have some timing debug information
 	if (pipeline->net_clock) {
 		GstBuffer *buff = gst_sample_get_buffer(pipeline->last_sample);
 		GstClockTime pts = GST_BUFFER_PTS(buff);
@@ -248,8 +271,13 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	}
 #endif
 
-	pipeline->last_width = *width = info.width;
-	pipeline->last_height = *height = info.height;
+	if (pipeline->supports_cropping_blit) {
+		*width =  (int)(info.width  * (1 - pipeline->video_crop_left - pipeline->video_crop_right));
+		*height = (int)(info.height * (1 - pipeline->video_crop_top - pipeline->video_crop_bottom));
+	} else {
+		*width = info.width;
+		*height = info.height;
+	}
 
 	return 1;
 }

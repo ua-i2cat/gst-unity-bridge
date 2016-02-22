@@ -40,7 +40,8 @@ public class GstUnityBridgePipeline
         int video_index,
         int audio_index,
         [MarshalAs(UnmanagedType.LPStr)]string net_clock_address,
-        int net_clock_port);
+        int net_clock_port,
+        float crop_left, float crop_top, float crop_right, float crop_bottom);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private int gub_pipeline_grab_frame(System.IntPtr p, ref int w, ref int h);
@@ -104,9 +105,9 @@ public class GstUnityBridgePipeline
         m_Instance = gub_pipeline_create();
     }
 
-    public void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port)
+    public void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
     {
-        gub_pipeline_setup(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port);
+        gub_pipeline_setup(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, crop_left, crop_top, crop_right, crop_bottom);
     }
 
     public bool GrabFrame(out Vector2 frameSize)
