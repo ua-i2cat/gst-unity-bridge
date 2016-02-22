@@ -76,13 +76,21 @@ typedef enum UnityGfxDeviceEventType {
 
 static void gub_copy_texture_d3d9(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr)
 {
+	static const GUID GUB_IID_IDirect3DTexture9 = { 0x85c31227, 0x3de5, 0x4f00, 0x9b, 0x3a, 0xf1, 0x1a, 0xc3, 0x8c, 0x18, 0xb5 };
+
 	if (native_texture_ptr)
 	{
+		void *d3d_interface;
 		IDirect3DTexture9* d3dtex = (IDirect3DTexture9*)native_texture_ptr;
 		D3DSURFACE_DESC desc;
 		D3DLOCKED_RECT lr;
 		GstVideoFrame video_frame;
 
+		if (d3dtex->lpVtbl->QueryInterface(d3dtex, &GUB_IID_IDirect3DTexture9, &d3d_interface) != S_OK) {
+			// This is not D3D9, we are probably inside the Editor in D3D11 mode and we assumed wrongly
+			gub_log("I assumed this was D3D9 but it is not. Are you using the Unity Editor without -force-d3d9 ?");
+			return;
+		}
 		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
 		d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, 0);
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
