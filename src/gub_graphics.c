@@ -280,7 +280,7 @@ static void gub_copy_texture_opengl(GUBGraphicContext *gcontext, GstVideoInfo *v
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_opengl(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
+static GUBGraphicContext *gub_create_graphic_context_opengl(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
 	GUBGraphicContextOpenGL *gcontext = NULL;
 	guintptr raw_context = gst_gl_context_get_current_gl_context(GUB_GL_PLATFORM);
@@ -531,7 +531,7 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 	}
 }
 
-static GUBGraphicContext *gub_create_graphic_context_egl(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
+static GUBGraphicContext *gub_create_graphic_context_egl(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
 	static const GLfloat vVertices[] = {
 		-1.f, -1.f,   0.f, 0.f,
@@ -644,11 +644,11 @@ GUBGraphicBackend gub_graphic_backend_egl = {
 // --------------------------------------------------- Internal API ---------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------
 
-GUBGraphicContext *gub_create_graphic_context(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height)
+GUBGraphicContext *gub_create_graphic_context(GstPipeline *pipeline, float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
 	GUBGraphicContext *gcontext = NULL;
 	if (gub_graphic_backend && gub_graphic_backend->create_graphic_context) {
-		gcontext = gub_graphic_backend->create_graphic_context(pipeline, crop_x, crop_y, crop_width, crop_height);
+		gcontext = gub_graphic_backend->create_graphic_context(pipeline, crop_left, crop_top, crop_right, crop_bottom);
 	}
 	return gcontext;
 }
