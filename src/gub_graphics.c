@@ -352,6 +352,10 @@ typedef struct _GUBGraphicContextEGL {
 	GLuint vao;
 	GLuint vbo;
 	GLint samplerLoc;
+	float crop_left;
+	float crop_top;
+	float crop_right;
+	float crop_bottom;
 } GUBGraphicContextEGL;
 
 static GLuint gub_load_shader(GLenum type, const char *shaderSrc)
@@ -488,7 +492,10 @@ static void gub_copy_texture_egl(GUBGraphicContextEGL *gcontext, GstVideoInfo *v
 		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &previous_vaenabled[1]);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, gcontext->fbo);
-		glViewport(0, 0, video_info->width, video_info->height);
+		glViewport(
+			-video_info->width * gcontext->crop_left,
+			-video_info->height * gcontext->crop_top,
+			video_info->width, video_info->height);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, unity_tex, 0);
 		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -564,6 +571,10 @@ static GUBGraphicContext *gub_create_graphic_context_egl(GstPipeline *pipeline, 
 	gcontext = (GUBGraphicContextEGL *)malloc(sizeof(GUBGraphicContextEGL));
 	gcontext->gl = gl_context;
 	gcontext->display = display;
+	gcontext->crop_left = crop_left;
+	gcontext->crop_top = crop_top;
+	gcontext->crop_right = crop_right;
+	gcontext->crop_bottom = crop_bottom;
 
 	glGenFramebuffers(1, &gcontext->fbo);
 
