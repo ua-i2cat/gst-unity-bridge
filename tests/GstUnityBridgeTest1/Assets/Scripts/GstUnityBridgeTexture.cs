@@ -5,12 +5,40 @@
 
 using UnityEngine;
 using System;
-using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using System.IO;
 [InitializeOnLoad]
 #endif
+
+[Serializable]
+public class GstUnityBridgeCroppingParams
+{
+    [Tooltip("Amount to crop from the left margin")]
+    [Range(0, 1)]
+    public float m_Left = 0.0F;
+    [Tooltip("Amount to crop from the top margin")]
+    [Range(0, 1)]
+    public float m_Top = 0.0F;
+    [Tooltip("Amount to crop from the right margin")]
+    [Range(0, 1)]
+    public float m_Right = 0.0F;
+    [Tooltip("Amount to crop from the bottom margin")]
+    [Range(0, 1)]
+    public float m_Bottom = 0.0F;
+};
+
+[Serializable]
+public class GstUnityBridgeSynchronizationParams
+{
+    [Tooltip("If unchecked, next two items are unused")]
+    public bool m_Enabled = false;
+    [Tooltip("IP address or host name of the clock provider")]
+    public string m_MasterClockAddress = "";
+    [Tooltip("Port of the clock provider")]
+    public int m_MasterClockPort = 0;
+}
 
 [DisallowMultipleComponent]
 public class GstUnityBridgeTexture : MonoBehaviour
@@ -29,13 +57,11 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
-    [Header("Network synchronization")]
-    [Tooltip("If unchecked, next two items are unused")]
-    public bool m_UseNetworkSynchronization = false;
-    [Tooltip("IP address or host name of the clock provider")]
-    public string m_ClockAddress = "";
-    [Tooltip("Port of the clock provider")]
-    public int m_ClockPort = 0;
+    [Tooltip("Video cropping parameters")]
+    public GstUnityBridgeCroppingParams m_VideoCropping;
+
+    [Tooltip("Network synchronization parameters")]
+    public GstUnityBridgeSynchronizationParams m_NetworkSynchronization;
 
     private GstUnityBridgePipeline m_Pipeline;
     private Texture2D m_Texture = null;
@@ -125,7 +151,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (m_Pipeline.IsLoaded || m_Pipeline.IsPlaying)
             m_Pipeline.Close();
         m_Pipeline.Setup(m_URI, m_VideoIndex, m_AudioIndex,
-            m_UseNetworkSynchronization ? m_ClockAddress : null, m_ClockPort);
+            m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
+            m_NetworkSynchronization.m_MasterClockPort,
+            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
     }
 
     public void Destroy()
