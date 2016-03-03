@@ -25,7 +25,7 @@ typedef void GUBGraphicDevice;
 typedef GUBGraphicDevice* (*GUBCreateGraphicDevicePFN)(void* device, int deviceType);
 typedef void(*GUBDestroyGraphicDevicePFN)(GUBGraphicDevice *gdevice);
 typedef GUBGraphicContext* (*GUBCreateGraphicContextPFN)(GstPipeline *pipeline, float crop_x, float crop_y, float crop_width, float crop_height);
-typedef void (*GUBProvideGraphicContextPFN)(GUBGraphicContext *gcontext, GstElement *element, const gchar *type);
+typedef GstContext* (*GUBProvideGraphicContextPFN)(GUBGraphicContext *gcontext, const gchar *type);
 typedef void(*GUBDestroyGraphicContextPFN)(GUBGraphicContext *gcontext);
 typedef void(*GUBCopyTexturePFN)(GUBGraphicContext *gcontext, GstVideoInfo *video_info, GstBuffer *buffer, void *native_texture_ptr);
 typedef const gchar* (*GUBGetVideoBranchDescriptionPFN)();
@@ -595,12 +595,15 @@ static GUBGraphicContext *gub_create_graphic_context_egl(GstPipeline *pipeline, 
 	return gcontext;
 }
 
-static void gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontext, GstElement *element, const gchar *type)
+static GstContext *gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontext, const gchar *type)
 {
+	GstContext *context = NULL;
+
+	gub_log("Providing context. gub_context=%p, type=%s", gcontext, type);
+
 	if (!gcontext) return;
 
 	if (type != NULL) {
-		GstContext *context = NULL;
 		if (g_strcmp0(type, GST_GL_DISPLAY_CONTEXT_TYPE) == 0) {
 			context = gst_context_new(GST_GL_DISPLAY_CONTEXT_TYPE, TRUE);
 			gst_context_set_gl_display(context, gcontext->display);
@@ -611,12 +614,23 @@ static void gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontext, GstE
 			s = gst_context_writable_structure(context);
 			gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, gcontext->gl, NULL);
 		}
-		if (context) {
-			gst_element_set_context(GST_ELEMENT(element), context);
-			gst_context_unref(context);
-			gub_log("Set GL context %s. Display type is %p", type, gcontext->display->type);
+		else if (g_strcmp0(type, "gst.gl.local_context") == 0) {
+			GstGLContext *local_context = gst_gl_context_new(gcontext->display);
+			GError *error = NULL;
+			gst_gl_context_create(local_context, gcontext->gl, &error);
+			if (error) {
+				gub_log("Cannot create local context: %s", error->message);
+				g_error_free(error);
+			}
+			else {
+				GstStructure *s;
+				context = gst_context_new("gst.gl.local_context", TRUE);
+				s = gst_context_writable_structure(context);
+				gst_structure_set(s, "context", GST_GL_TYPE_CONTEXT, local_context, NULL);
+			}
 		}
 	}
+	return context;
 }
 
 static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
@@ -664,11 +678,13 @@ GUBGraphicContext *gub_create_graphic_context(GstPipeline *pipeline, float crop_
 	return gcontext;
 }
 
-void gub_provide_graphic_context(GUBGraphicContext *gcontext, GstElement *element, const gchar *type)
+GstContext *gub_provide_graphic_context(GUBGraphicContext *gcontext, const gchar *type)
 {
+	GstContext *context = NULL;
 	if (gub_graphic_backend && gub_graphic_backend->provide_graphic_context) {
-		gub_graphic_backend->provide_graphic_context(gcontext, element, type);
+		context = gub_graphic_backend->provide_graphic_context(gcontext, type);
 	}
+	return context;
 }
 
 

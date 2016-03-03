@@ -115,25 +115,32 @@ static void source_created(GstBin *playbin, GstElement *source, GUBPipeline *pip
 	g_signal_connect(source, "select-stream", G_CALLBACK(select_stream), pipeline);
 }
 
-static gboolean sync_bus_call(GstBus *bus, GstMessage *msg, GUBPipeline *pipeline)
+static GstPadProbeReturn pad_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
 {
-	switch (GST_MESSAGE_TYPE(msg)) {
-	case GST_MESSAGE_NEED_CONTEXT:
-	{
-		const gchar *context_type;
-		GstContext *context = NULL;
+	GUBPipeline *pipeline = (GUBPipeline *)user_data;
+	GstPadProbeReturn ret = GST_PAD_PROBE_OK;
+	GstQuery *query;
+	const gchar *context_type = NULL;
+	GError *error = NULL;
+	GstContext *context = NULL;
 
-		gst_message_parse_context_type(msg, &context_type);
-		gub_log("got need context %s", context_type);
-		gub_provide_graphic_context(pipeline->graphic_context, GST_ELEMENT(msg->src), context_type);
+	if ((GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM) == 0) goto beach;
 
-		break;
+	query = GST_PAD_PROBE_INFO_QUERY(info);
+	if (GST_QUERY_TYPE(query) != GST_QUERY_CONTEXT) goto beach;
+
+	gst_query_parse_context_type(query, &context_type);
+
+	context = gub_provide_graphic_context(pipeline->graphic_context, context_type);
+	if (context) {
+		gst_query_set_context(query, context);
+		ret = GST_PAD_PROBE_HANDLED;
+
+		gub_log("Query for context type %s answered with context %p", context_type, context);
+		gst_context_unref(context);
 	}
-	default:
-		break;
-	}
-
-	return FALSE;
+beach:
+	return ret;
 }
 
 EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
@@ -164,6 +171,20 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
 	g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
 	g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
 
+	if (vsink) {
+		// Plant a pad probe to answer context queries
+		GstElement *sink;
+		sink = gst_bin_get_by_name(GST_BIN(vsink), "sink");
+		if (sink) {
+			GstPad *pad = gst_element_get_static_pad(sink, "sink");
+			if (pad) {
+				gulong id = gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_QUERY_DOWNSTREAM, pad_probe, pipeline, NULL);
+				gub_log("Sink pad probe id is %d", id);
+				gst_object_unref(pad);
+			}
+		}
+	}
+
 	// If the video branch does not have a "videocrop" element, we assume this graphic backend
 	// is doing cropping during blitting.
 	if (g_strstr_len(gub_get_video_branch_description(), -1, "videocrop") == NULL) {
@@ -182,11 +203,6 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
 		pipeline->video_crop_right = crop_right;
 		pipeline->video_crop_bottom = crop_bottom;
 	}
-
-	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
-	gst_bus_enable_sync_message_emission(bus);
-	g_signal_connect(bus, "sync-message", G_CALLBACK(sync_bus_call), pipeline);
-	gst_object_unref(bus);
 
 	g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), pipeline);
 
