@@ -32,6 +32,13 @@ public class GStreamer
 
     public static void Ref()
     {
+#if UNITY_ANDROID
+        AndroidJNIHelper.debug = true;
+        AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+        AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
+        gstAndroid.CallStatic("init", activity);
+#endif
         gub_ref();
     }
 
