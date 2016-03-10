@@ -11,6 +11,9 @@ public class GStreamer
 {
     internal const string DllName = "GstUnityBridge";
 
+    [DllImport("gstreamer_android", CallingConvention = CallingConvention.Cdecl)]
+    extern static private UIntPtr gst_android_get_application_class_loader();
+
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I4)]
     extern static private bool gub_ref();
@@ -33,6 +36,8 @@ public class GStreamer
     public static void Ref()
     {
 #if UNITY_ANDROID
+        // Force loading of gstreamer_android.so before GstUnityBridge.so
+        gst_android_get_application_class_loader();
         AndroidJNIHelper.debug = true;
         AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
         AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
