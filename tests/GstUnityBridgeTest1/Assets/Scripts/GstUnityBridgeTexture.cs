@@ -69,7 +69,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private int m_Height = 64;
 
 #if UNITY_EDITOR
-    static GstUnityBridgeTexture()
+    void Awake()
     {
         // Setup the PATH environment variable when running from within the Unity Editor,
         // so it can find the GstUnityBridge dll.
