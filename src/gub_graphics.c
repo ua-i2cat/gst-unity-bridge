@@ -104,7 +104,6 @@ static void gub_copy_texture_d3d9(GUBGraphicContextD3D9 *gcontext, GstVideoInfo 
 	{
 		void *d3d_interface;
 		IDirect3DTexture9* d3dtex = (IDirect3DTexture9*)native_texture_ptr;
-		D3DSURFACE_DESC desc;
 		D3DLOCKED_RECT lr;
 		GstVideoFrame video_frame;
 
@@ -113,8 +112,9 @@ static void gub_copy_texture_d3d9(GUBGraphicContextD3D9 *gcontext, GstVideoInfo 
 			gub_log("I assumed this was D3D9 but it is not. Are you using the Unity Editor without -force-d3d9 ?");
 			return;
 		}
-		d3dtex->lpVtbl->GetLevelDesc(d3dtex, 0, &desc);
-		d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, 0);
+		d3dtex->lpVtbl->Release(d3dtex);
+		if (d3dtex->lpVtbl->LockRect(d3dtex, 0, &lr, NULL, D3DLOCK_DISCARD) != D3D_OK)
+			gub_log("Problem locking D3D texture");
 		gst_video_frame_map(&video_frame, video_info, buffer, GST_MAP_READ);
 		if (gcontext->crop_left == 0 && gcontext->crop_top == 0 && gcontext->crop_right == 0 && gcontext->crop_bottom == 0) {
 			memcpy((char*)lr.pBits, GST_VIDEO_FRAME_PLANE_DATA(&video_frame, 0), video_info->width * video_info->height * 4);
@@ -132,7 +132,8 @@ static void gub_copy_texture_d3d9(GUBGraphicContextD3D9 *gcontext, GstVideoInfo 
 			}
 		}
 		gst_video_frame_unmap(&video_frame);
-		d3dtex->lpVtbl->UnlockRect(d3dtex, 0);
+		if (d3dtex->lpVtbl->UnlockRect(d3dtex, 0) != D3D_OK)
+			gub_log("Problem unlocking D3D texture");
 	}
 }
 
