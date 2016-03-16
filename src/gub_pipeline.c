@@ -294,8 +294,11 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 	if (pipeline->net_clock) {
 		GstBuffer *buff = gst_sample_get_buffer(pipeline->last_sample);
 		GstClockTime pts = GST_BUFFER_PTS(buff);
-		GstClockTime curr = gst_clock_get_time(pipeline->net_clock) - gst_element_get_base_time(pipeline->pipeline);
-		gub_log_pipeline(pipeline, "Buffer PTS is %" GST_TIME_FORMAT " and current is %" GST_TIME_FORMAT, GST_TIME_ARGS(pts), GST_TIME_ARGS(curr));
+		GstClockTime curr = gst_clock_get_time(pipeline->net_clock);
+		GstClockTime base = gst_element_get_base_time(pipeline->pipeline);
+		gub_log_pipeline(pipeline, "Buffer PTS is %" GST_TIME_FORMAT ", current is %" GST_TIME_FORMAT ", base is %" GST_TIME_FORMAT, GST_TIME_ARGS(pts), GST_TIME_ARGS(curr), GST_TIME_ARGS(base));
+		if (gst_element_get_clock(pipeline->pipeline) != pipeline->net_clock)
+			gub_log_pipeline(pipeline, "WRONG CLOCK: pipeline=%p net_clock=%p", gst_element_get_clock(pipeline->pipeline), pipeline->net_clock);
 	}
 #endif
 
