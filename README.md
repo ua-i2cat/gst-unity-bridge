@@ -12,7 +12,7 @@ The system is composed of a bunch of C# scripts to be used inside Unity, which i
 The plugin, in turn, calls the GStreamer libraries, which must be available on the system.
 On Android, GStreamer is linked statically to the plugin.
 
-A sample project, unimaginatively called `GstUnityBridgeTest1` is included in the `tests` folder.
+ A sample project, unimaginatively called `GstUnityBridgeTest1` is included in the `tests` folder.
 It contains prebuilt binaries for **Windows** (x86 and x86_64) and **Android** (arm).
 
 ## 1. Usage
