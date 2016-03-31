@@ -26,17 +26,17 @@
 
 void gub_log(const char *format, ...)
 {
-	static FILE *logf = NULL;
-	va_list args;
+    static FILE *logf = NULL;
+    va_list args;
 
-	if (!logf) {
-		logf = fopen("gub.log", "wt");
-	}
-	va_start(args, format);
-	vfprintf(logf, format, args);
-	fprintf(logf, "\n");
-	fflush(logf);
-	va_end(args);
+    if (!logf) {
+        logf = fopen("gub.log", "wt");
+    }
+    va_start(args, format);
+    vfprintf(logf, format, args);
+    fprintf(logf, "\n");
+    fflush(logf);
+    va_end(args);
 }
 
 #else
@@ -46,13 +46,13 @@ void gub_log(const char *format, ...)
 
 void gub_log(const char *format, ...)
 {
-	va_list args;
-	gchar *msg;
-	va_start(args, format);
-	msg = g_strdup_vprintf(format, args);
-	__android_log_print(ANDROID_LOG_INFO, "gub", "%s", msg);
-	g_free(msg);
-	va_end(args);
+    va_list args;
+    gchar *msg;
+    va_start(args, format);
+    msg = g_strdup_vprintf(format, args);
+    __android_log_print(ANDROID_LOG_INFO, "gub", "%s", msg);
+    g_free(msg);
+    va_end(args);
 }
 
 #endif
