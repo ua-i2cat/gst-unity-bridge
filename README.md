@@ -1,15 +1,15 @@
 # GStreamer - Unity3D Bridge (GUB)
 
-Put [GStreamer 1.x](http://gstreamer.freedesktop.org) pipelines inside [Unity3D](http://www.unity3d.com).
+Play any media URI inside [Unity3D](http://www.unity3d.com) textures using [GStreamer 1.x](http://gstreamer.freedesktop.org) pipelines.
 
 Inspired on code from https://github.com/mrayy/mrayGStreamerUnity
-
-A flexible approach has been followed, so the plugin is both lightweight and generic.
 
 Tested on Windows and Android.
 
 The system is composed of a bunch of C# scripts to be used inside Unity, which interact with a native plugin (`GstUnityBridge.dll` or `libGstUnityBridge.so`).
+
 The plugin, in turn, calls the GStreamer libraries, which must be available on the system.
+
 On Android, GStreamer is statically linked into a single library which can be deployed with your application (`libGstUnityBridge.so` and `libgstreamer_android.so`).
 
 A sample project, unimaginatively called `GstUnityBridgeTest1` is included in the `tests` folder.
@@ -50,11 +50,9 @@ For example, use this on the server:
 
 This will create an RTSP stream at `rtsp://127.0.0.1:8554/test`. Then add these properties to your object inside Unity:
 
-  | Property          | Value |
-  | ----------------- | ----- |
-  | **URI**           | rtsp://YOUR.SERVER.ADDRESS:8554/test |
-  | **Clock Address** | YOUR.SERVER.ADDRESS |
-  | **Clock Port**    | 8554 |
+  - **URI**: `rtsp://YOUR.SERVER.ADDRESS:8554/test`
+  - **Clock Address**: `YOUR.SERVER.ADDRESS`
+  - **Clock Port**: `8554`
 
 ### Video Cropping
 
@@ -70,14 +68,13 @@ It is easier to use the prebuilt binaries included in the test project. However,
 Solution and Project files are included for Visual Studio 2015 (works with the Free Community Edition). Just open and build.
 Make sure the latest [GStreamer 1.x SDK](http://gstreamer.freedesktop.org/data/pkg/windows/) is installed and the
 `GSTREAMER_1_0_ROOT_X86` or `GSTREAMER_1_0_ROOT_X86_64` environment variable is defined and points to the proper place.
-Copy the resulting `GstUnityBridge.dll` to the `Assets\Plugins` folder of your Unity project.
+Copy the resulting `GstUnityBridge.dll` to the `Assets\Plugins\x86` or `x86_64` folder of your Unity project.
 
 ### Building the plugin for Android
-First off, some patches for GStreamer (`$GST_PREFIX` is the folder where you installed GStreamer, for example, `C:\gstreamer\1.0\android-arm`):
+First off, some patches for GStreamer are needed (`$GST_PREFIX` is the folder where you installed GStreamer, for example, `C:\gstreamer\1.0\android-arm`):
 
 - Take this into account if using a GStreamer version below 1.6.2: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 - In `$GST_PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h`, make sure `GST_GL_HAVE_GLSYNC` is defined to 1
-- In `$GST_PREFIX/share/gst-android/ndk-build/gstreamer_android-1.0.c.in`, #if 0 all methods after `gst_android_load_gio_modules`, and the three variables at the top (`_context`, `_class_loader` and `_priv_gst_info_start_time`)
 
 Then, the usual:
 
@@ -86,8 +83,18 @@ android update project -p . -s --target android-23
 ndk-build
 ```
 
-No need to go further in the build process, two libraries are already available in the `libs` folder: `libgstreamer_android.so` and `libGstUnityBridge.so`.
-Both must be copied to the `Assets\Plugins` folder of your Unity project.
+At this point, two libraries are already available in the `libs` folder: `libgstreamer_android.so` and `libGstUnityBridge.so`.
+Both must be copied to the `Assets\Plugins\android_arm` folder of your Unity project.
+
+Then you need to compile the Java part. The easiest way is probably to build the whole project and then generate the JAR file with the needed classes:
+
+```
+ant release
+cd bin/classes
+jar cvf gub.jar org/*
+```
+
+And copy the resulting `gub.jar` file to the `Assets\Plugins\android_arm` folder of your Unity project.
 
 ### Building the plugin for Linux
 No facilities are given yet (no Makefiles), but this has worked in the past:
@@ -96,9 +103,13 @@ No facilities are given yet (no Makefiles), but this has worked in the past:
 gcc -shared -fPIC -Wl,--no-as-needed `pkg-config --cflags --libs gstreamer-1.0 gstreamer-net-1.0 gstreamer-video-1.0` *.c -o libGstUnityBridge.so
 ```
 
+And then copy the resulting `libGstUnityBridge.so` to the `Assets\Plugins\Linux` folder of your Unity project.
+
 ## 3. TODO
 
 - Better error reporting (when sync fails, for example)
 - Allow using other synchronization mechanisms (NTP or PTP, for example)
-- Due to some unknown issue with the Android GStreamer audio sink, its presence breaks network synchronization.
+- Due to some unknown issue with the Android GStreamer audio sink, presence breaks network synchronization.
 - The Unity3D Editor loads all native plugins at startup, so it does not pick up changes you make later on. https://github.com/mrayy/mrayGStreamerUnity already took care of this.
+- iOS support
+- OSX support
