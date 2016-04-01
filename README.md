@@ -50,6 +50,8 @@ For example, use this on the server:
 
 This will create an RTSP stream at `rtsp://127.0.0.1:8554/test`. Then add these properties to your object inside Unity:
 
+  | Property          | Value |
+  | ----------------- | ----- |
   | **URI**           | rtsp://YOUR.SERVER.ADDRESS:8554/test |
   | **Clock Address** | YOUR.SERVER.ADDRESS |
   | **Clock Port**    | 8554 |
