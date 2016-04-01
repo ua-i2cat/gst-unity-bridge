@@ -23,6 +23,7 @@
 #include <gst/net/gstnet.h>
 #include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "gub.h"
 
 #define MAX_JITTERBUFFER_DELAY_MS 40
