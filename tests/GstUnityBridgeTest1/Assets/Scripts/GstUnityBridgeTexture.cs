@@ -1,14 +1,30 @@
 ﻿/*
- * GStreamer - Unity3D bridge.
- * (C) 2015 i2CAT
- */
+*  GStreamer - Unity3D bridge (GUB).
+*  Copyright (C) 2016  Fundacio i2CAT, Internet i Innovacio digital a Catalunya
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Lesser General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Lesser General Public License for more details.
+*
+*  You should have received a copy of the GNU Lesser General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
+*/
 
 using UnityEngine;
 using System;
+using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
-using System.IO;
+
 [InitializeOnLoad]
 #endif
 
@@ -68,14 +84,14 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private int m_Width = 64;
     private int m_Height = 64;
 
-#if UNITY_EDITOR
     void Awake()
     {
-        // Setup the PATH environment variable when running from within the Unity Editor,
-        // so it can find the GstUnityBridge dll.
+        // Setup the PATH environment variable so it can find the GstUnityBridge dll.
         var currentPath = Environment.GetEnvironmentVariable("PATH",
             EnvironmentVariableTarget.Process);
         var dllPath = "";
+
+#if UNITY_EDITOR
 
 #if UNITY_EDITOR_32
         dllPath = Application.dataPath + "/Plugins/x86";
@@ -84,10 +100,21 @@ public class GstUnityBridgeTexture : MonoBehaviour
 #endif
 
         if (currentPath != null && currentPath.Contains(dllPath) == false)
-            Environment.SetEnvironmentVariable("PATH", currentPath + Path.PathSeparator
-                + dllPath, EnvironmentVariableTarget.Process);
-    }
+            Environment.SetEnvironmentVariable("PATH",
+                dllPath + Path.PathSeparator +
+                dllPath + "/GStreamer/bin" + Path.PathSeparator +
+                currentPath,
+                EnvironmentVariableTarget.Process);
+#else
+        dllPath = Application.dataPath + "/Plugins";
+        if (currentPath != null && currentPath.Contains(dllPath) == false)
+            Environment.SetEnvironmentVariable("PATH",
+                dllPath + Path.PathSeparator +
+                currentPath,
+                EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("GST_PLUGIN_PATH", dllPath, EnvironmentVariableTarget.Process);
 #endif
+    }
 
     public void Initialize()
     {
