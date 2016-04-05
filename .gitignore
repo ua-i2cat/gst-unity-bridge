@@ -215,7 +215,8 @@ ModelManifest.xml
 # Android ndk-build
 gst-build-armeabi/
 libs/
-assets/
+assets/fontconfig
+assets/ssl
 src/org/
 build.xml
 local.properties
