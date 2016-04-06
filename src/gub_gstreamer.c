@@ -104,7 +104,7 @@ static void gst_debug_gub(GstDebugCategory * category, GstDebugLevel level,
     g_free(tag);
 }
 
-EXPORT_API void gub_ref()
+EXPORT_API void gub_ref(const char *gst_debug_string)
 {
     gub_log("GST ref (%d -> %d)", gub_ref_count, gub_ref_count + 1);
     if (gub_ref_count == 0) {
@@ -121,8 +121,13 @@ EXPORT_API void gub_ref()
 
         gst_debug_remove_log_function(gst_debug_log_default);
         gst_debug_add_log_function((GstLogFunction)gst_debug_gub, NULL, NULL);
-        gst_debug_set_active(TRUE);
-        gst_debug_set_default_threshold(GST_LEVEL_WARNING);
+        if (gst_debug_string) {
+            gub_log("Setting debug level to %s", gst_debug_string);
+            gst_debug_set_active(TRUE);
+            gst_debug_set_threshold_from_string(gst_debug_string, TRUE);
+        } else {
+            gst_debug_set_active(FALSE);
+        }
 
 #if defined (__ANDROID__)
         gst_android_register_static_plugins();

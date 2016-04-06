@@ -22,20 +22,34 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+typedef void(*GUBUnityDebugLogPFN)(const char *message);
+
+GUBUnityDebugLogPFN gub_unity_debug_log = NULL;
+
+EXPORT_API void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn) {
+    gub_unity_debug_log = pfn;
+}
+
 #if !defined(__ANDROID__)
 
 void gub_log(const char *format, ...)
 {
-    static FILE *logf = NULL;
     va_list args;
 
-    if (!logf) {
-        logf = fopen("gub.log", "wt");
-    }
     va_start(args, format);
-    vfprintf(logf, format, args);
-    fprintf(logf, "\n");
-    fflush(logf);
+    if (!gub_unity_debug_log) {
+        static FILE *logf = NULL;
+        if (!logf) {
+            logf = fopen("gub.log", "w+t");
+        }
+        vfprintf(logf, format, args);
+        fprintf(logf, "\n");
+        fflush(logf);
+    } else {
+        gchar *message = g_strdup_vprintf(format, args);
+        gub_unity_debug_log(message);
+        g_free(message);
+    }
     va_end(args);
 }
 

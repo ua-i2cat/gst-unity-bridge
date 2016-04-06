@@ -31,7 +31,7 @@ public class GStreamer
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I4)]
-    extern static private bool gub_ref();
+    extern static private bool gub_ref([MarshalAs(UnmanagedType.LPStr)]string gst_debug_string);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_unref();
@@ -39,6 +39,12 @@ public class GStreamer
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I4)]
     extern static private bool gub_is_active();
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void GUBUnityDebugLogPFN([MarshalAs(UnmanagedType.LPStr)]string message);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static internal void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn);
 
     public static bool IsActive
     {
@@ -48,7 +54,7 @@ public class GStreamer
         }
     }
 
-    public static void Ref()
+    public static void Ref(string gst_debug_string)
     {
 #if UNITY_ANDROID
         // Force loading of gstreamer_android.so before GstUnityBridge.so
@@ -59,7 +65,7 @@ public class GStreamer
         AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
         gstAndroid.CallStatic("init", activity);
 #endif
-        gub_ref();
+        gub_ref(gst_debug_string);
     }
 
     public static void Unref()

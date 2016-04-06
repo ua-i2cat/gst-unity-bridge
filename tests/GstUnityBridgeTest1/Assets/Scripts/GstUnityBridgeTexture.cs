@@ -22,12 +22,6 @@ using UnityEngine;
 using System;
 using System.IO;
 
-#if UNITY_EDITOR
-using UnityEditor;
-
-[InitializeOnLoad]
-#endif
-
 [Serializable]
 public class GstUnityBridgeCroppingParams
 {
@@ -56,6 +50,18 @@ public class GstUnityBridgeSynchronizationParams
     public int m_MasterClockPort = 0;
 }
 
+[Serializable]
+public class GstUnityBridgeDebugParams
+{
+    [Tooltip("Enable to write debug output to the Unity Editor Console, " +
+        "LogCat on Android or gub.txt on a Standalone player")]
+    public bool m_Enabled = false;
+    [Tooltip("Comma-separated list of categories and log levels as used " +
+        "with the GST_DEBUG environment variable. Setting to '2' is normally enough. " +
+        "Leave empty to disable GStreamer debug output.")]
+    public string m_GStreamerDebugString = "2";
+}
+
 [DisallowMultipleComponent]
 public class GstUnityBridgeTexture : MonoBehaviour
 {
@@ -73,11 +79,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
-    [Tooltip("Video cropping parameters")]
     public GstUnityBridgeCroppingParams m_VideoCropping;
-
-    [Tooltip("Network synchronization parameters")]
     public GstUnityBridgeSynchronizationParams m_NetworkSynchronization;
+    public GstUnityBridgeDebugParams m_DebugOutput;
 
     private GstUnityBridgePipeline m_Pipeline;
     private Texture2D m_Texture = null;
@@ -120,8 +124,19 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         m_HasBeenInitialized = true;
 
-        GStreamer.Ref();
-        m_Pipeline = new GstUnityBridgePipeline();
+        if (Application.isEditor && m_DebugOutput.m_Enabled)
+        {
+            GStreamer.gub_log_set_unity_handler(x => Debug.logger.Log(LogType.Log, "GUB", x));
+        } else
+        {
+            GStreamer.gub_log_set_unity_handler(null);
+
+        }
+
+        GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ?
+            null : m_DebugOutput.m_GStreamerDebugString);
+
+        m_Pipeline = new GstUnityBridgePipeline(name);
 
         // Call resize which will create a texture and a webview for us if they do not exist yet at this point.
         Resize(m_Width, m_Height);
