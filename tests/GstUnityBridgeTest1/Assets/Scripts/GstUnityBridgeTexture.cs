@@ -126,7 +126,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
         if (Application.isEditor && m_DebugOutput.m_Enabled)
         {
-            GStreamer.gub_log_set_unity_handler(x => Debug.logger.Log(LogType.Log, "GUB", x));
+            GStreamer.gub_log_set_unity_handler(
+                (int level, string message) => Debug.logger.Log((LogType)level, "GUB", message));
         } else
         {
             GStreamer.gub_log_set_unity_handler(null);

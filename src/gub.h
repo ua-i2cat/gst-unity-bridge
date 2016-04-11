@@ -39,5 +39,6 @@ gboolean gub_blit_image(GUBGraphicContext *gcontext, GstSample *sample, void *te
 const gchar *gub_get_video_branch_description();
 
 void gub_log(const char *format, ...);
+void gub_log_error(const char *message);
 
 #endif

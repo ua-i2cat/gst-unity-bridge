@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-typedef void(*GUBUnityDebugLogPFN)(const char *message);
+typedef void(*GUBUnityDebugLogPFN)(gint32 level, const char *message);
 
 GUBUnityDebugLogPFN gub_unity_debug_log = NULL;
 
@@ -47,7 +47,7 @@ void gub_log(const char *format, ...)
         fflush(logf);
     } else {
         gchar *message = g_strdup_vprintf(format, args);
-        gub_unity_debug_log(message);
+        gub_unity_debug_log(3, message);
         g_free(message);
     }
     va_end(args);
@@ -70,3 +70,13 @@ void gub_log(const char *format, ...)
 }
 
 #endif
+
+void gub_log_error(const char *message)
+{
+    if (gub_unity_debug_log) {
+        gub_unity_debug_log(0, message);
+    }
+    else {
+        gub_log("ERROR: %s", message);
+    }
+}

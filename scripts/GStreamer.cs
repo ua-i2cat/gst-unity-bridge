@@ -41,7 +41,9 @@ public class GStreamer
     extern static private bool gub_is_active();
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void GUBUnityDebugLogPFN([MarshalAs(UnmanagedType.LPStr)]string message);
+    internal delegate void GUBUnityDebugLogPFN(
+        [MarshalAs(UnmanagedType.I4)]int level,
+        [MarshalAs(UnmanagedType.LPStr)]string message);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static internal void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn);

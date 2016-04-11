@@ -145,6 +145,23 @@ static void source_created(GstBin *playbin, GstElement *source, GUBPipeline *pip
     g_signal_connect(source, "select-stream", G_CALLBACK(select_stream), pipeline);
 }
 
+static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipeline)
+{
+    if (GST_MESSAGE_TYPE(message) == GST_MESSAGE_ERROR)
+    {
+        GError *error = NULL;
+        gchar *debug = NULL;
+        gchar *full_msg = NULL;
+
+        gst_message_parse_error(message, &error, &debug);
+        full_msg = g_strdup_printf("[%s] %s (%s)", pipeline->name, error->message, debug);
+        gub_log_error(full_msg);
+        g_error_free(error);
+        g_free(debug);
+        g_free(full_msg);
+    }
+}
+
 static GstPadProbeReturn pad_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
 {
     GUBPipeline *pipeline = (GUBPipeline *)user_data;
@@ -200,6 +217,11 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
     gub_log_pipeline(pipeline, "Using video sink: %s", gub_get_video_branch_description());
     g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
     g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
+
+    bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
+    gst_bus_add_signal_watch(bus);
+    gst_object_unref(bus);
+    g_signal_connect(bus, "message", G_CALLBACK(message_received), pipeline);
 
     if (vsink) {
         // Plant a pad probe to answer context queries
