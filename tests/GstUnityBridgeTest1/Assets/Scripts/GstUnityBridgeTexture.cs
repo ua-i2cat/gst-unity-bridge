@@ -44,9 +44,9 @@ public class GstUnityBridgeSynchronizationParams
 {
     [Tooltip("If unchecked, next two items are unused")]
     public bool m_Enabled = false;
-    [Tooltip("IP address or host name of the clock provider")]
+    [Tooltip("IP address or host name of the GStreamer network clock provider")]
     public string m_MasterClockAddress = "";
-    [Tooltip("Port of the clock provider")]
+    [Tooltip("Port of the GStreamer network clock provider")]
     public int m_MasterClockPort = 0;
 }
 

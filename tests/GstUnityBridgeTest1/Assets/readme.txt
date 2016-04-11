@@ -48,3 +48,6 @@ server address and port must be provided through properties:
     properties are ignored.
 - Master Clock Address: Server address (IP or host name) of the clock provider.
 - Master Clock Port: Port where the clock is provided.
+
+The quickest way to have a clock server running is using the test-netclock
+example from https://cgit.freedesktop.org/gstreamer/gst-rtsp-server/
