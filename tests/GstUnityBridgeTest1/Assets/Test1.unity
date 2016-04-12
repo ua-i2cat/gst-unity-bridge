@@ -277,6 +277,9 @@ MonoBehaviour:
     m_Enabled: 1
     m_MasterClockAddress: 192.168.10.115
     m_MasterClockPort: 8554
+  m_DebugOutput:
+    m_Enabled: 1
+    m_GStreamerDebugString: 2
 --- !u!23 &447630516
 MeshRenderer:
   m_ObjectHideFlags: 0
