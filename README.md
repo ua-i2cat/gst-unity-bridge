@@ -63,6 +63,11 @@ This can be very handy, but keep in mind that the whole video is transmitted and
 
   - **Left**, **Top**, **Right**, **Bottom**: Amount to crop from each edge, from 0.0 (no crop) to 1.0 (full crop, no image is displayed)
 
+### Debug Output
+
+  - **Enabled**: Enable to write debug output to the Unity Editor Console, LogCat on Android or gub.txt on a Standalone player.
+  - **GStreamerDebugString**: Comma-separated list of categories and log levels as used with the GST_DEBUG environment variable. Setting to '2' is normally enough. Leave empty to disable GStreamer debug output.
+
 ## 2. Building the native plugin
 It is easier to use the prebuilt binaries included in the test project. However, should you need to build your own native plugin, use these instructions.
 
