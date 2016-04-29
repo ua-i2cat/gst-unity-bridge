@@ -137,7 +137,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ?
             null : m_DebugOutput.m_GStreamerDebugString);
 
-        m_Pipeline = new GstUnityBridgePipeline(name);
+        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID());
 
         // Call resize which will create a texture and a webview for us if they do not exist yet at this point.
         Resize(m_Width, m_Height);
