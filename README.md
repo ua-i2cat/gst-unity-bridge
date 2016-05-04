@@ -120,3 +120,7 @@ And then copy the resulting `libGstUnityBridge.so` to the `Assets\Plugins\Linux`
 - The Unity3D Editor loads all native plugins at startup, so it does not pick up changes you make later on. https://github.com/mrayy/mrayGStreamerUnity already took care of this.
 - iOS support
 - OSX support
+
+## 4. ACKNOWLEDGEMENT
+
+This package has been created within the [ImmersiaTV](http://immersiatv.eu) project. This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement 688619.
