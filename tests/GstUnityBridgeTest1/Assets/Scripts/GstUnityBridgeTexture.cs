@@ -64,7 +64,7 @@ public class GstUnityBridgeDebugParams
 
 public class GstUnityBridgeTexture : MonoBehaviour
 {
-	public bool m_IsAlpha = false;
+    public bool m_IsAlpha = false;
     public bool m_FlipX = false;
     public bool m_FlipY = false;
     [Tooltip("URI to get the stream from")]
@@ -148,17 +148,17 @@ public class GstUnityBridgeTexture : MonoBehaviour
         }
         else if (GetComponent<Renderer>() && GetComponent<Renderer>().material)
         {
-			if (!m_IsAlpha)
-			{
-				GetComponent<Renderer>().material.mainTexture = m_Texture;
-				GetComponent<Renderer>().material.mainTextureScale = new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
-																				 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f));
-			} else
-			{
-				GetComponent<Renderer>().material.SetTexture("_AlphaTex", m_Texture);
-				GetComponent<Renderer>().material.SetTextureScale("_AlphaTex", new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
-																				 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f)));
-			}
+            if (!m_IsAlpha)
+            {
+                GetComponent<Renderer>().material.mainTexture = m_Texture;
+                GetComponent<Renderer>().material.mainTextureScale = new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
+                                                                                 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f));
+            } else
+            {
+                GetComponent<Renderer>().material.SetTexture("_AlphaTex", m_Texture);
+                GetComponent<Renderer>().material.SetTextureScale("_AlphaTex", new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
+                                                                                 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f)));
+            }
         }
         else
         {
@@ -166,7 +166,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         }
 
     }
-	
+
     void Start()
     {
         if (m_InitializeOnStart && !m_HasBeenInitialized)
@@ -176,7 +176,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
             Play();
         }
     }
-    
+
     public void Resize(int _Width, int _Height)
     {
         m_Width = _Width;
