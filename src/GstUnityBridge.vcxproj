@@ -190,6 +190,9 @@
   <ItemGroup>
     <ClInclude Include="gub.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\tests\GstUnityBridgeTest1\Assets\readme.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
