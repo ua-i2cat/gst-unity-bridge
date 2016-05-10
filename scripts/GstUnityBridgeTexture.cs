@@ -247,29 +247,19 @@ public class GstUnityBridgeTexture : MonoBehaviour
         Destroy();
     }
 
-    void OnGUI()
+    void Update()
     {
-        // This function should do input injection (if enabled), and drawing.
         if (m_Pipeline == null)
             return;
 
-        Event e = Event.current;
-
-        switch (e.type)
+        Vector2 sz;
+        if (m_Pipeline.GrabFrame(out sz))
         {
-            case EventType.Repaint:
-                {
-                    Vector2 sz;
-                    if (m_Pipeline.GrabFrame(out sz))
-                    {
-                        Resize((int)sz.x, (int)sz.y);
-                        if (m_Texture == null)
-                            Debug.LogError(string.Format("[{0}] The GstTexture does not have a texture assigned and will not paint.", name));
-                        else
-                            m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
-                    }
-                    break;
-                }
+            Resize((int)sz.x, (int)sz.y);
+            if (m_Texture == null)
+                Debug.LogError(string.Format("[{0}] The GstTexture does not have a texture assigned and will not paint.", name));
+            else
+                m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
         }
     }
 }
