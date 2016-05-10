@@ -5,6 +5,9 @@ using the GStreamer framework (https://gstreamer.freedesktop.org/), which
 is contained in the Plugins folder.
 Works for Windows (32 and 64 bits) and Android (arm_v7).
 
+Works from within the Unity Editor on Windows, if it is launched in DirectX9
+mode (Launch with the -force-d3d9 option).
+
 Sample scenes are included.
 
 USAGE
