@@ -76,7 +76,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
-    private bool m_InitializeOnStart = true;
+    public bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
     public GstUnityBridgeCroppingParams m_VideoCropping;
