@@ -64,6 +64,11 @@ public class GstUnityBridgeDebugParams
 
 public class GstUnityBridgeTexture : MonoBehaviour
 {
+#if !EXPERIMENTAL
+    [HideInInspector]
+#endif
+    [Tooltip("The output will be written to a texture called '_AlphaTex' instead of the main texture " +
+        "(Requires the ExternalAlpha shader)")]
     public bool m_IsAlpha = false;
     public bool m_FlipX = false;
     public bool m_FlipY = false;
