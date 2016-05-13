@@ -71,9 +71,9 @@ public class StringEvent : UnityEvent<string> { }
 public class GstUnityBridgeEventParams
 {
     [Tooltip("Called when media reaches the end")]
-    public UnityEvent m_onFinish;
+    public UnityEvent m_OnFinish;
     [Tooltip("Called when GStreamer reports an error")]
-    public StringEvent m_onError;
+    public StringEvent m_OnError;
 }
 
 public class GstUnityBridgeTexture : MonoBehaviour
@@ -147,9 +147,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
         self.m_EventProcessor.QueueEvent(() => {
-            if (self.m_Events.m_onFinish != null)
+            if (self.m_Events.m_OnFinish != null)
             {
-                self.m_Events.m_onFinish.Invoke();
+                self.m_Events.m_OnFinish.Invoke();
             }
         });
     }
@@ -159,9 +159,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
         self.m_EventProcessor.QueueEvent(() => {
-            if (self.m_Events.m_onError != null)
+            if (self.m_Events.m_OnError != null)
             {
-                self.m_Events.m_onError.Invoke(message);
+                self.m_Events.m_OnError.Invoke(message);
             }
         });
     }

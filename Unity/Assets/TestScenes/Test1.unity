@@ -270,12 +270,12 @@ MonoBehaviour:
   m_AudioIndex: 0
   m_InitializeOnStart: 1
   m_Events:
-    m_onFinish:
+    m_OnFinish:
       m_PersistentCalls:
         m_Calls: []
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
-    m_onError:
+    m_OnError:
       m_PersistentCalls:
         m_Calls: []
       m_TypeName: StringEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
@@ -337,12 +337,12 @@ MonoBehaviour:
   m_AudioIndex: 0
   m_InitializeOnStart: 1
   m_Events:
-    m_onFinish:
+    m_OnFinish:
       m_PersistentCalls:
         m_Calls: []
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
-    m_onError:
+    m_OnError:
       m_PersistentCalls:
         m_Calls: []
       m_TypeName: StringEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
