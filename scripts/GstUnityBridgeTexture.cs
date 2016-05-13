@@ -19,8 +19,10 @@
 */
 
 using UnityEngine;
+using UnityEngine.Events;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 [Serializable]
 public class GstUnityBridgeCroppingParams
@@ -62,6 +64,18 @@ public class GstUnityBridgeDebugParams
     public string m_GStreamerDebugString = "2";
 }
 
+[Serializable]
+public class StringEvent : UnityEvent<string> { }
+
+[Serializable]
+public class GstUnityBridgeEventParams
+{
+    [Tooltip("Called when media reaches the end")]
+    public UnityEvent m_onFinish;
+    [Tooltip("Called when GStreamer reports an error")]
+    public StringEvent m_onError;
+}
+
 public class GstUnityBridgeTexture : MonoBehaviour
 {
 #if !EXPERIMENTAL
@@ -84,6 +98,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
+    public GstUnityBridgeEventParams m_Events;
     public GstUnityBridgeCroppingParams m_VideoCropping;
     public GstUnityBridgeSynchronizationParams m_NetworkSynchronization;
     public GstUnityBridgeDebugParams m_DebugOutput;
@@ -92,6 +107,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
+    private EventProcessor m_EventProcessor;
+    private GCHandle m_instanceHandle;
 
     void Awake()
     {
@@ -125,9 +142,39 @@ public class GstUnityBridgeTexture : MonoBehaviour
 #endif
     }
 
+    private static void OnFinish(IntPtr p)
+    {
+        GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
+
+        self.m_EventProcessor.QueueEvent(() => {
+            if (self.m_Events.m_onFinish != null)
+            {
+                self.m_Events.m_onFinish.Invoke();
+            }
+        });
+    }
+
+    private static void OnError(IntPtr p, string message)
+    {
+        GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
+
+        self.m_EventProcessor.QueueEvent(() => {
+            if (self.m_Events.m_onError != null)
+            {
+                self.m_Events.m_onError.Invoke(message);
+            }
+        });
+    }
+
     public void Initialize()
     {
         m_HasBeenInitialized = true;
+
+        m_EventProcessor = GetComponent<EventProcessor>();
+        if (m_EventProcessor == null)
+        {
+            m_EventProcessor = gameObject.AddComponent<EventProcessor>();
+        }
 
         if (Application.isEditor && m_DebugOutput.m_Enabled)
         {
@@ -142,7 +189,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
         GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ?
             null : m_DebugOutput.m_GStreamerDebugString);
 
-        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID());
+        m_instanceHandle = GCHandle.Alloc(this);
+        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, (IntPtr)m_instanceHandle);
 
         // Call resize which will create a texture and a webview for us if they do not exist yet at this point.
         Resize(m_Width, m_Height);
@@ -220,6 +268,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_Pipeline = null;
             GStreamer.Unref();
         }
+        m_instanceHandle.Free();
     }
 
     public void Play()

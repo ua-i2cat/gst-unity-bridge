@@ -48,7 +48,10 @@ public class GstUnityBridgePipeline
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private System.IntPtr gub_pipeline_create(
-        [MarshalAs(UnmanagedType.LPStr)]string name);
+        [MarshalAs(UnmanagedType.LPStr)]string name,
+        System.IntPtr eos_pfn,
+        System.IntPtr error_pfn,
+        System.IntPtr userdata);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_setup(System.IntPtr p,
@@ -64,6 +67,13 @@ public class GstUnityBridgePipeline
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_blit_image(System.IntPtr p, System.IntPtr _TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void GUBPipelineOnEosPFN(System.IntPtr p);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void GUBPipelineOnErrorPFN(System.IntPtr p,
+        [MarshalAs(UnmanagedType.LPStr)]string message);
 
     protected System.IntPtr m_Instance;
 
@@ -116,9 +126,9 @@ public class GstUnityBridgePipeline
         gub_pipeline_close(m_Instance);
     }
 
-    public GstUnityBridgePipeline(string name)
+    internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, System.IntPtr userdata)
     {
-        m_Instance = gub_pipeline_create(name);
+        m_Instance = gub_pipeline_create(name, Marshal.GetFunctionPointerForDelegate(eos_pfn), Marshal.GetFunctionPointerForDelegate(error_pfn), userdata);
     }
 
     public void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)

@@ -43,6 +43,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventProcessor.cs" />
     <Compile Include="GStreamer.cs" />
     <Compile Include="GstUnityBridgePipeline.cs" />
     <Compile Include="GstUnityBridgeTexture.cs" />

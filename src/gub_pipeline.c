@@ -29,7 +29,12 @@
 #define MAX_JITTERBUFFER_DELAY_MS 40
 #define MAX_PIPELINE_DELAY_MS 500
 
-typedef struct _GUBPipeline {
+typedef struct _GUBPipeline GUBPipeline;
+
+typedef void (*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
+typedef void(*GUBPipelineOnErrorPFN)(GUBPipeline *userdata, char *message);
+
+struct _GUBPipeline {
     char *name;
     GUBGraphicContext *graphic_context;
     gboolean supports_cropping_blit;
@@ -45,7 +50,11 @@ typedef struct _GUBPipeline {
     float video_crop_top;
     float video_crop_right;
     float video_crop_bottom;
-} GUBPipeline;
+
+    GUBPipelineOnEosPFN on_eos_handler;
+    GUBPipelineOnErrorPFN on_error_handler;
+    void *userdata;
+};
 
 void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
 {
@@ -59,11 +68,15 @@ void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
     g_free(final_string);
 }
 
-EXPORT_API void *gub_pipeline_create(const char *name)
+EXPORT_API void *gub_pipeline_create(const char *name, GUBPipelineOnEosPFN eos_handler, GUBPipelineOnErrorPFN error_handler, void *userdata)
 {
     GUBPipeline *pipeline = (GUBPipeline *)malloc(sizeof(GUBPipeline));
     memset(pipeline, 0, sizeof(GUBPipeline));
     pipeline->name = g_strdup(name);
+    pipeline->on_eos_handler = eos_handler;
+    pipeline->on_error_handler = error_handler;
+    pipeline->userdata = userdata;
+
     return pipeline;
 }
 
@@ -147,7 +160,8 @@ static void source_created(GstBin *playbin, GstElement *source, GUBPipeline *pip
 
 static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipeline)
 {
-    if (GST_MESSAGE_TYPE(message) == GST_MESSAGE_ERROR)
+    switch (GST_MESSAGE_TYPE(message)) {
+    case GST_MESSAGE_ERROR:
     {
         GError *error = NULL;
         gchar *debug = NULL;
@@ -156,9 +170,19 @@ static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipe
         gst_message_parse_error(message, &error, &debug);
         full_msg = g_strdup_printf("[%s] %s (%s)", pipeline->name, error->message, debug);
         gub_log_error(full_msg);
+        if (pipeline->on_error_handler != NULL) {
+            pipeline->on_error_handler(pipeline->userdata, error->message);
+        }
         g_error_free(error);
         g_free(debug);
         g_free(full_msg);
+        break;
+    }
+    case GST_MESSAGE_EOS:
+        if (pipeline->on_eos_handler != NULL) {
+            pipeline->on_eos_handler(pipeline->userdata);
+        }
+        break;
     }
 }
 
