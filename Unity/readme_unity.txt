@@ -27,9 +27,15 @@ A number of properties are available:
     audio stream. This is a zero-based index. -1 disables audio altogether.
 - Initialize On Start: Whether the GStreamer pipeline must be created and set
     to PLAYING when the scene is loaded. Leave this on unless you plan to
-	activate the pipeline manually from a script.
+    activate the pipeline manually from a script later on by calling
+    Initialize(), Setup() and Play().
 
 More properties are available, detailed in the next sections:
+
+EVENTS
+
+- OnFinish: Called when the media ends.
+- OnError (string message): Called when there is any kind of error.
 
 VIDEO CROPPING
 
