@@ -88,15 +88,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -113,8 +117,8 @@
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86</Command>
-      <Message>Copying to test folder...</Message>
+      <Command>copy $(TargetPath) ..\..\Unity\Assets\Plugins\x86</Command>
+      <Message>Copying to Unity folder...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,8 +136,8 @@
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86_64</Command>
-      <Message>Copying to test folder...</Message>
+      <Command>copy $(TargetPath) ..\..\Unity\Assets\Plugins\x86_64</Command>
+      <Message>Copying to Unity folder...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,8 +159,8 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86</Command>
-      <Message>Copying to test folder...</Message>
+      <Command>copy $(TargetPath) ..\..\Unity\Assets\Plugins\x86</Command>
+      <Message>Copying to Unity folder...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -177,8 +181,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(TargetPath) ..\tests\GstUnityBridgeTest1\Assets\Plugins\x86_64</Command>
-      <Message>Copying to test folder...</Message>
+      <Command>copy $(TargetPath) ..\..\Unity\Assets\Plugins\x86_64</Command>
+      <Message>Copying to Unity folder...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
