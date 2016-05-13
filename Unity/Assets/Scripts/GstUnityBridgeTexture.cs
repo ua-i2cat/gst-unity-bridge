@@ -102,16 +102,16 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool m_InitializeOnStart = true;
     private bool m_HasBeenInitialized = false;
 
-    public GstUnityBridgeEventParams m_Events;
-    public GstUnityBridgeCroppingParams m_VideoCropping;
-    public GstUnityBridgeSynchronizationParams m_NetworkSynchronization;
-    public GstUnityBridgeDebugParams m_DebugOutput;
+    public GstUnityBridgeEventParams m_Events = new GstUnityBridgeEventParams();
+    public GstUnityBridgeCroppingParams m_VideoCropping = new GstUnityBridgeCroppingParams();
+    public GstUnityBridgeSynchronizationParams m_NetworkSynchronization = new GstUnityBridgeSynchronizationParams();
+    public GstUnityBridgeDebugParams m_DebugOutput = new GstUnityBridgeDebugParams();
 
     private GstUnityBridgePipeline m_Pipeline;
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
-    private EventProcessor m_EventProcessor;
+    private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
 
     void Awake()
@@ -318,6 +318,11 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         get { return m_Pipeline != null ? m_Pipeline.Position : 0F; }
         set { if (m_Pipeline !=null) m_Pipeline.Position = value; }
+    }
+
+    public bool IsPlaying
+    {
+        get { return m_Pipeline != null ? m_Pipeline.IsPlaying : false; }
     }
 
     void Update()
