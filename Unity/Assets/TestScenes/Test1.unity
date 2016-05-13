@@ -265,6 +265,7 @@ MonoBehaviour:
   m_IsAlpha: 0
   m_FlipX: 1
   m_FlipY: 0
+  m_Loop: 0
   m_URI: http://dash.edgesuite.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd
   m_VideoIndex: 0
   m_AudioIndex: 0
@@ -332,6 +333,7 @@ MonoBehaviour:
   m_IsAlpha: 1
   m_FlipX: 0
   m_FlipY: 1
+  m_Loop: 0
   m_URI: http://84.88.40.158/itv/transition_04b.mp4
   m_VideoIndex: 0
   m_AudioIndex: 0

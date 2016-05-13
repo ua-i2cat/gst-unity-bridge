@@ -84,8 +84,12 @@ public class GstUnityBridgeTexture : MonoBehaviour
     [Tooltip("The output will be written to a texture called '_AlphaTex' instead of the main texture " +
         "(Requires the ExternalAlpha shader)")]
     public bool m_IsAlpha = false;
+    [Tooltip("Flip texture horizontally")]
     public bool m_FlipX = false;
+    [Tooltip("Flip texture vertically")]
     public bool m_FlipY = false;
+    [Tooltip("Play media from the beginning when it reaches the end")]
+    public bool m_Loop = false;
     [Tooltip("URI to get the stream from")]
     public string m_URI = "";
     [Tooltip("Zero-based index of the video stream to use (-1 disables video)")]
@@ -150,6 +154,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
             if (self.m_Events.m_OnFinish != null)
             {
                 self.m_Events.m_OnFinish.Invoke();
+            }
+            if (self.m_Loop)
+            {
+                self.Position = 0;
             }
         });
     }
