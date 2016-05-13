@@ -93,14 +93,6 @@ public class GstUnityBridgePipeline
         }
     }
 
-    public System.IntPtr NativePtr
-    {
-        get
-        {
-            return m_Instance;
-        }
-    }
-
     public void Destroy()
     {
         gub_pipeline_destroy(m_Instance);
