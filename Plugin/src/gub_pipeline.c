@@ -138,6 +138,27 @@ EXPORT_API gint32 gub_pipeline_is_playing(GUBPipeline *pipeline)
     return pipeline->playing;
 }
 
+EXPORT_API double gub_pipeline_get_duration(GUBPipeline *pipeline)
+{
+    gint64 duration = GST_CLOCK_TIME_NONE;
+    gst_element_query_duration(pipeline->pipeline, GST_FORMAT_TIME, &duration);
+    return duration / (double)GST_SECOND;
+}
+
+EXPORT_API double gub_pipeline_get_position(GUBPipeline *pipeline)
+{
+    gint64 position = GST_CLOCK_TIME_NONE;
+    gst_element_query_position(pipeline->pipeline, GST_FORMAT_TIME, &position);
+    return position / (double)GST_SECOND;
+}
+
+EXPORT_API void gub_pipeline_set_position(GUBPipeline *pipeline, double position)
+{
+    gst_element_seek_simple(pipeline->pipeline,
+        GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT,
+        (gint64)(position * GST_SECOND));
+}
+
 static gboolean select_stream(GstBin *rtspsrc, guint num, GstCaps *caps, GUBPipeline *pipeline)
 {
     gboolean select = (num == pipeline->video_index || num == pipeline->audio_index);

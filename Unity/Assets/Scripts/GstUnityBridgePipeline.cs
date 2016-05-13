@@ -75,9 +75,18 @@ public class GstUnityBridgePipeline
     internal delegate void GUBPipelineOnErrorPFN(System.IntPtr p,
         [MarshalAs(UnmanagedType.LPStr)]string message);
 
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private double gub_pipeline_get_duration(System.IntPtr p);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private double gub_pipeline_get_position(System.IntPtr p);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_set_position(System.IntPtr p, double position);
+
     protected System.IntPtr m_Instance;
 
-    public bool IsLoaded
+    internal bool IsLoaded
     {
         get
         {
@@ -85,7 +94,7 @@ public class GstUnityBridgePipeline
         }
     }
 
-    public bool IsPlaying
+    internal bool IsPlaying
     {
         get
         {
@@ -93,29 +102,40 @@ public class GstUnityBridgePipeline
         }
     }
 
-    public void Destroy()
+    internal void Destroy()
     {
         gub_pipeline_destroy(m_Instance);
     }
 
-    public void Play()
+    internal void Play()
     {
         gub_pipeline_play(m_Instance);
     }
 
-    public void Pause()
+    internal void Pause()
     {
         gub_pipeline_pause(m_Instance);
     }
 
-    public void Stop()
+    internal void Stop()
     {
         gub_pipeline_stop(m_Instance);
     }
 
-    public void Close()
+    internal void Close()
     {
         gub_pipeline_close(m_Instance);
+    }
+
+    internal double Duration
+    {
+        get { return gub_pipeline_get_duration(m_Instance); }
+    }
+
+    internal double Position
+    {
+        get { return gub_pipeline_get_position(m_Instance); }
+        set { gub_pipeline_set_position(m_Instance, value); }
     }
 
     internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, System.IntPtr userdata)
@@ -123,12 +143,12 @@ public class GstUnityBridgePipeline
         m_Instance = gub_pipeline_create(name, Marshal.GetFunctionPointerForDelegate(eos_pfn), Marshal.GetFunctionPointerForDelegate(error_pfn), userdata);
     }
 
-    public void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
+    internal void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
     {
         gub_pipeline_setup(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, crop_left, crop_top, crop_right, crop_bottom);
     }
 
-    public bool GrabFrame(out Vector2 frameSize)
+    internal bool GrabFrame(out Vector2 frameSize)
     {
         int w = 0, h = 0;
         if (gub_pipeline_grab_frame(m_Instance, ref w, ref h) == 1)
@@ -141,7 +161,7 @@ public class GstUnityBridgePipeline
         return false;
     }
 
-    public void BlitTexture(System.IntPtr _NativeTexturePtr, int _TextureWidth, int _TextureHeight)
+    internal void BlitTexture(System.IntPtr _NativeTexturePtr, int _TextureWidth, int _TextureHeight)
     {
         if (_NativeTexturePtr == System.IntPtr.Zero) return;
 

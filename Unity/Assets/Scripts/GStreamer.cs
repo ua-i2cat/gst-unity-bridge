@@ -48,7 +48,7 @@ public class GStreamer
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static internal void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn);
 
-    public static bool IsActive
+    internal static bool IsActive
     {
         get
         {
@@ -56,7 +56,7 @@ public class GStreamer
         }
     }
 
-    public static void Ref(string gst_debug_string)
+    internal static void Ref(string gst_debug_string)
     {
 #if UNITY_ANDROID
         // Force loading of gstreamer_android.so before GstUnityBridge.so
@@ -70,7 +70,7 @@ public class GStreamer
         gub_ref(gst_debug_string);
     }
 
-    public static void Unref()
+    internal static void Unref()
     {
         gub_unref();
     }

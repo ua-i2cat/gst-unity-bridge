@@ -301,6 +301,17 @@ public class GstUnityBridgeTexture : MonoBehaviour
         Destroy();
     }
 
+    public double Duration
+    {
+        get { return m_Pipeline != null ? m_Pipeline.Duration : 0F; }
+    }
+
+    public double Position
+    {
+        get { return m_Pipeline != null ? m_Pipeline.Position : 0F; }
+        set { if (m_Pipeline !=null) m_Pipeline.Position = value; }
+    }
+
     void Update()
     {
         if (m_Pipeline == null)
