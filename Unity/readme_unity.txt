@@ -92,3 +92,9 @@ A number of methods ara available through scripting:
 - Stop():
     No description. You have to guess.
     Play() is called automatically from Start() if InitializeOnStart=true.
+
+SOURCE CODE
+-----------
+
+The project is Open Source. Code available at:
+https://github.com/ua-i2cat/gst-unity-bridge
