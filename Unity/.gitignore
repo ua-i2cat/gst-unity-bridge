@@ -37,7 +37,9 @@ InspectorExpandedItems.asset
 MonoManager.asset
 NetworkManager.asset
 ScriptMapper
- 
+Assets/AssetStoreTools*
+Assets/Cardboard*
+Assets/Plugins/Android*
  
  
 ## Ignore Visual Studio files built from VSStudio4Unity
