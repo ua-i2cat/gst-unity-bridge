@@ -21,7 +21,6 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 
 [Serializable]
@@ -114,38 +113,6 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
 
-    void Awake()
-    {
-        // Setup the PATH environment variable so it can find the GstUnityBridge dll.
-        var currentPath = Environment.GetEnvironmentVariable("PATH",
-            EnvironmentVariableTarget.Process);
-        var dllPath = "";
-
-#if UNITY_EDITOR
-
-#if UNITY_EDITOR_32
-        dllPath = Application.dataPath + "/Plugins/x86";
-#elif UNITY_EDITOR_64
-        dllPath = Application.dataPath + "/Plugins/x86_64";
-#endif
-
-        if (currentPath != null && currentPath.Contains(dllPath) == false)
-            Environment.SetEnvironmentVariable("PATH",
-                dllPath + Path.PathSeparator +
-                dllPath + "/GStreamer/bin" + Path.PathSeparator +
-                currentPath,
-                EnvironmentVariableTarget.Process);
-#else
-        dllPath = Application.dataPath + "/Plugins";
-        if (currentPath != null && currentPath.Contains(dllPath) == false)
-            Environment.SetEnvironmentVariable("PATH",
-                dllPath + Path.PathSeparator +
-                currentPath,
-                EnvironmentVariableTarget.Process);
-        Environment.SetEnvironmentVariable("GST_PLUGIN_PATH", dllPath, EnvironmentVariableTarget.Process);
-#endif
-    }
-
     private static void OnFinish(IntPtr p)
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
@@ -184,18 +151,13 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_EventProcessor = gameObject.AddComponent<EventProcessor>();
         }
 
+        GStreamer.GUBUnityDebugLogPFN log_handler = null;
         if (Application.isEditor && m_DebugOutput.m_Enabled)
         {
-            GStreamer.gub_log_set_unity_handler(
-                (int level, string message) => Debug.logger.Log((LogType)level, "GUB", message));
-        } else
-        {
-            GStreamer.gub_log_set_unity_handler(null);
-
+            log_handler = (int level, string message) => Debug.logger.Log((LogType)level, "GUB", message);
         }
 
-        GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ?
-            null : m_DebugOutput.m_GStreamerDebugString);
+        GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ? null : m_DebugOutput.m_GStreamerDebugString, log_handler);
 
         m_instanceHandle = GCHandle.Alloc(this);
         m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, (IntPtr)m_instanceHandle);

@@ -21,6 +21,7 @@
 using UnityEngine;
 using System.Runtime.InteropServices;	// For DllImport.
 using System;
+using System.IO;
 
 public class GStreamer
 {
@@ -46,7 +47,7 @@ public class GStreamer
         [MarshalAs(UnmanagedType.LPStr)]string message);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static internal void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn);
+    extern static private void gub_log_set_unity_handler(GUBUnityDebugLogPFN pfn);
 
     internal static bool IsActive
     {
@@ -56,7 +57,39 @@ public class GStreamer
         }
     }
 
-    internal static void Ref(string gst_debug_string)
+    static void AddPluginsToPath()
+    {
+        // Setup the PATH environment variable so it can find the GstUnityBridge dll.
+        var currentPath = Environment.GetEnvironmentVariable("PATH",
+            EnvironmentVariableTarget.Process);
+        var dllPath = "";
+
+#if UNITY_EDITOR
+
+#if UNITY_EDITOR_32
+        dllPath = Application.dataPath + "/Plugins/x86";
+#elif UNITY_EDITOR_64
+        dllPath = Application.dataPath + "/Plugins/x86_64";
+#endif
+
+        if (currentPath != null && currentPath.Contains(dllPath) == false)
+            Environment.SetEnvironmentVariable("PATH",
+                dllPath + Path.PathSeparator +
+                dllPath + "/GStreamer/bin" + Path.PathSeparator +
+                currentPath,
+                EnvironmentVariableTarget.Process);
+#else
+        dllPath = Application.dataPath + "/Plugins";
+        if (currentPath != null && currentPath.Contains(dllPath) == false)
+            Environment.SetEnvironmentVariable("PATH",
+                dllPath + Path.PathSeparator +
+                currentPath,
+                EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("GST_PLUGIN_PATH", dllPath, EnvironmentVariableTarget.Process);
+#endif
+    }
+
+    internal static void Ref(string gst_debug_string, GUBUnityDebugLogPFN log_handler)
     {
 #if UNITY_ANDROID
         // Force loading of gstreamer_android.so before GstUnityBridge.so
@@ -67,6 +100,8 @@ public class GStreamer
         AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
         gstAndroid.CallStatic("init", activity);
 #endif
+        AddPluginsToPath();
+        gub_log_set_unity_handler(log_handler);
         gub_ref(gst_debug_string);
     }
 
