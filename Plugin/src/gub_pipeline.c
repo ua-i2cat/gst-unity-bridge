@@ -21,6 +21,8 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <gst/net/gstnet.h>
+#include <gst/app/gstappsrc.h>
+#include <gst/pbutils/encoding-profile.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,10 +52,13 @@ struct _GUBPipeline {
     float video_crop_top;
     float video_crop_right;
     float video_crop_bottom;
+    int video_width, video_height;
 
     GUBPipelineOnEosPFN on_eos_handler;
     GUBPipelineOnErrorPFN on_error_handler;
     void *userdata;
+
+    GstAppSrc *appsrc;
 };
 
 void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
@@ -235,7 +240,7 @@ beach:
     return ret;
 }
 
-EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
+EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
     const gchar *net_clock_addr, int net_clock_port,
     float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
@@ -279,6 +284,7 @@ EXPORT_API void gub_pipeline_setup(GUBPipeline *pipeline, const gchar *uri, int 
                 gub_log_pipeline(pipeline, "Sink pad probe id is %d", id);
                 gst_object_unref(pad);
             }
+            gst_object_unref(sink);
         }
     }
 
@@ -400,7 +406,7 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
     return 1;
 }
 
-EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight)
+EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr)
 {
     if (!pipeline->last_sample) {
         return;
@@ -410,4 +416,107 @@ EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNat
 
     gst_sample_unref(pipeline->last_sample);
     pipeline->last_sample = NULL;
+}
+
+GstEncodingProfile * gub_pipeline_create_mp4_h264_profile(void)
+{
+    GstEncodingContainerProfile *prof;
+    GstCaps *caps;
+
+    caps = gst_caps_from_string("video/quicktime,variant=iso");
+    prof = gst_encoding_container_profile_new("mp4/H.264", "Standard mp4/H.264", caps, NULL);
+    gst_caps_unref(caps);
+
+    caps = gst_caps_from_string("video/x-h264,profile=main");
+    gst_encoding_container_profile_add_profile(prof, (GstEncodingProfile*)gst_encoding_video_profile_new(caps, NULL, NULL, 0));
+    gst_caps_unref(caps);
+
+    return (GstEncodingProfile*)prof;
+}
+
+EXPORT_API void gub_pipeline_setup_encoding(GUBPipeline *pipeline, const gchar *filename,
+    int width, int height)
+{
+    GError *err = NULL;
+    GstElement *encodebin, *filesink;
+    GstCaps *raw_caps;
+    gchar *raw_caps_description = NULL;
+    GstBus *bus = NULL;
+    GstPad *encodebin_sink_pad = NULL, *appsrc_src_pad = NULL;
+
+    if (pipeline->pipeline) {
+        gub_pipeline_close(pipeline);
+    }
+
+    pipeline->pipeline = gst_pipeline_new(NULL);
+    pipeline->video_width = width;
+    pipeline->video_height = height;
+
+    raw_caps_description = g_strdup_printf("video/x-raw,format=RGBA,width=%d,height=%d", width, height);
+    raw_caps = gst_caps_from_string(raw_caps_description);
+    gub_log_pipeline(pipeline, "Using video caps: %s", raw_caps_description);
+    g_free(raw_caps_description);
+
+    pipeline->appsrc = GST_APP_SRC(gst_element_factory_make("appsrc", "source"));
+    gub_log_pipeline(pipeline, "Using appsrc: %p", pipeline->appsrc);
+    gst_app_src_set_caps(pipeline->appsrc, raw_caps);
+    g_object_set(pipeline->appsrc,
+        "stream-type", 0,
+        "max-bytes", width*height * 4 * 10,
+        "is-live", TRUE,
+        "do-timestamp", TRUE,
+        "format", GST_FORMAT_TIME,
+        "min-latency", 0, NULL);
+
+    encodebin = gst_element_factory_make("encodebin", NULL);
+    gub_log_pipeline(pipeline, "Using encodebin: %p", encodebin);
+    g_object_set(encodebin, "profile", gub_pipeline_create_mp4_h264_profile(), NULL);
+    g_signal_emit_by_name(encodebin, "request-pad", raw_caps, &encodebin_sink_pad);
+    gub_log_pipeline(pipeline, "Using encodebin_sink_pad: %p", encodebin_sink_pad);
+
+    filesink = gst_element_factory_make("filesink", NULL);
+    g_object_set(filesink, "location", filename, NULL);
+    gub_log_pipeline(pipeline, "Using filesink: %p, location: %s", filesink, filename);
+
+    gst_bin_add_many(GST_BIN(pipeline->pipeline), GST_ELEMENT(pipeline->appsrc), encodebin, filesink, NULL);
+
+    appsrc_src_pad = gst_element_get_static_pad(GST_ELEMENT(pipeline->appsrc), "src");
+    gst_pad_link(appsrc_src_pad, encodebin_sink_pad);
+    gst_element_link(encodebin, filesink);
+
+    bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
+    gst_bus_add_signal_watch(bus);
+    gst_object_unref(bus);
+    g_signal_connect(bus, "message", G_CALLBACK(message_received), pipeline);
+}
+
+EXPORT_API void gub_pipeline_consume_image(GUBPipeline *pipeline, guint8 *rawdata, int size)
+{
+    GstBuffer *buffer = gst_buffer_new_allocate(NULL, size, NULL);
+    GstMapInfo mi;
+    int line;
+    int stride = pipeline->video_width * 4;
+
+    gst_buffer_map(buffer, &mi, GST_MAP_WRITE);
+    for (line = 0; line < pipeline->video_height; line++)
+    {
+        memcpy(mi.data + line * stride, rawdata + (pipeline->video_height - 1 - line) * stride, stride);
+    }
+    gst_buffer_unmap(buffer, &mi);
+
+    if (pipeline->playing == FALSE && pipeline->play_requested == TRUE) {
+        gub_log_pipeline(pipeline, "Setting pipeline to PLAYING");
+        gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_PLAYING);
+        gub_log_pipeline(pipeline, "State change completed");
+        pipeline->playing = TRUE;
+    }
+
+    gst_app_src_push_buffer(pipeline->appsrc, buffer);
+}
+
+EXPORT_API void gub_pipeline_stop_encoding(GUBPipeline *pipeline)
+{
+    if (pipeline && pipeline->appsrc != NULL) {
+        gst_app_src_end_of_stream(pipeline->appsrc);
+    }
 }

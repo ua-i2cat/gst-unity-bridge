@@ -113,11 +113,17 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
 
+    void Awake()
+    {
+        GStreamer.AddPluginsToPath();
+    }
+
     private static void OnFinish(IntPtr p)
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        self.m_EventProcessor.QueueEvent(() => {
+        self.m_EventProcessor.QueueEvent(() =>
+        {
             if (self.m_Events.m_OnFinish != null)
             {
                 self.m_Events.m_OnFinish.Invoke();
@@ -133,7 +139,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        self.m_EventProcessor.QueueEvent(() => {
+        self.m_EventProcessor.QueueEvent(() =>
+        {
             if (self.m_Events.m_OnError != null)
             {
                 self.m_Events.m_OnError.Invoke(message);
@@ -176,7 +183,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
                 GetComponent<Renderer>().material.mainTexture = m_Texture;
                 GetComponent<Renderer>().material.mainTextureScale = new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
                                                                                  Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f));
-            } else
+            }
+            else
             {
                 GetComponent<Renderer>().material.SetTexture("_AlphaTex", m_Texture);
                 GetComponent<Renderer>().material.SetTextureScale("_AlphaTex", new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
@@ -224,7 +232,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_AudioIndex = _AudioIndex;
         if (m_Pipeline.IsLoaded || m_Pipeline.IsPlaying)
             m_Pipeline.Close();
-        m_Pipeline.Setup(m_URI, m_VideoIndex, m_AudioIndex,
+        m_Pipeline.SetupDecoding(m_URI, m_VideoIndex, m_AudioIndex,
             m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
             m_NetworkSynchronization.m_MasterClockPort,
             m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
@@ -279,7 +287,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public double Position
     {
         get { return m_Pipeline != null ? m_Pipeline.Position : 0F; }
-        set { if (m_Pipeline !=null) m_Pipeline.Position = value; }
+        set { if (m_Pipeline != null) m_Pipeline.Position = value; }
     }
 
     public bool IsPlaying

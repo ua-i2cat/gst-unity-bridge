@@ -54,7 +54,7 @@ public class GstUnityBridgePipeline
         System.IntPtr userdata);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_pipeline_setup(System.IntPtr p,
+    extern static private void gub_pipeline_setup_decoding(System.IntPtr p,
         [MarshalAs(UnmanagedType.LPStr)]string uri,
         int video_index,
         int audio_index,
@@ -66,7 +66,7 @@ public class GstUnityBridgePipeline
     extern static private int gub_pipeline_grab_frame(System.IntPtr p, ref int w, ref int h);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_pipeline_blit_image(System.IntPtr p, System.IntPtr _TextureNativePtr, int _UnityTextureWidth, int _UnityTextureHeight);
+    extern static private void gub_pipeline_blit_image(System.IntPtr p, System.IntPtr _TextureNativePtr);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void GUBPipelineOnEosPFN(System.IntPtr p);
@@ -83,6 +83,17 @@ public class GstUnityBridgePipeline
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_set_position(System.IntPtr p, double position);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_setup_encoding(System.IntPtr p,
+        [MarshalAs(UnmanagedType.LPStr)]string filename,
+        int width, int height);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_consume_image(System.IntPtr p, System.IntPtr rawdata, int size);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_stop_encoding(System.IntPtr p);
 
     protected System.IntPtr m_Instance;
 
@@ -140,12 +151,16 @@ public class GstUnityBridgePipeline
 
     internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, System.IntPtr userdata)
     {
-        m_Instance = gub_pipeline_create(name, Marshal.GetFunctionPointerForDelegate(eos_pfn), Marshal.GetFunctionPointerForDelegate(error_pfn), userdata);
+        m_Instance = gub_pipeline_create(name,
+            eos_pfn == null ? (System.IntPtr)null : Marshal.GetFunctionPointerForDelegate(eos_pfn),
+            error_pfn == null ? (System.IntPtr)null : Marshal.GetFunctionPointerForDelegate(error_pfn),
+            userdata);
     }
 
-    internal void Setup(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
+    internal void SetupDecoding(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
     {
-        gub_pipeline_setup(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, crop_left, crop_top, crop_right, crop_bottom);
+        gub_pipeline_setup_decoding(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, crop_left, crop_top, crop_right, crop_bottom);
+        Debug.Log("Decoding setup complete");
     }
 
     internal bool GrabFrame(out Vector2 frameSize)
@@ -165,6 +180,22 @@ public class GstUnityBridgePipeline
     {
         if (_NativeTexturePtr == System.IntPtr.Zero) return;
 
-        gub_pipeline_blit_image(m_Instance, _NativeTexturePtr, _TextureWidth, _TextureHeight);  // We pass Unity's width and height values of the texture
+        gub_pipeline_blit_image(m_Instance, _NativeTexturePtr);
+    }
+
+    internal void SetupEncoding(string filename, int width, int height)
+    {
+        gub_pipeline_setup_encoding(m_Instance, filename, width, height);
+        Debug.Log("Encoding setup complete");
+    }
+
+    internal void ConsumeImage(System.IntPtr ptr, int size)
+    {
+        gub_pipeline_consume_image(m_Instance, ptr, size);
+    }
+
+    internal void StopEncoding()
+    {
+        gub_pipeline_stop_encoding(m_Instance);
     }
 }

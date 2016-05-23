@@ -57,7 +57,7 @@ public class GStreamer
         }
     }
 
-    static void AddPluginsToPath()
+    public static void AddPluginsToPath()
     {
         // Setup the PATH environment variable so it can find the GstUnityBridge dll.
         var currentPath = Environment.GetEnvironmentVariable("PATH",
@@ -100,7 +100,6 @@ public class GStreamer
         AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
         gstAndroid.CallStatic("init", activity);
 #endif
-        AddPluginsToPath();
         gub_log_set_unity_handler(log_handler);
         gub_ref(gst_debug_string);
     }
