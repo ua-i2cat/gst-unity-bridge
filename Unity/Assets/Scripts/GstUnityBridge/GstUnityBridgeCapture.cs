@@ -5,11 +5,10 @@ using UnityEngine;
 
 class GstUnityBridgeCapture : MonoBehaviour
 {
-    public Texture2D m_Source;
-    public string m_Filename;
+    public Texture2D m_Source = null;
+    public string m_Filename = null;
 
     private GstUnityBridgePipeline m_Pipeline;
-    private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
 
     private bool m_EOS = false;
