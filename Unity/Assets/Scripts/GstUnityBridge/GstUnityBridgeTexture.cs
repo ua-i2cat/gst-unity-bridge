@@ -96,6 +96,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
     [Tooltip("Zero-based index of the audio stream to use (-1 disables audio)")]
     public int m_AudioIndex = 0;
 
+    public Material m_TargetMaterial;
+
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
     public bool m_InitializeOnStart = true;
@@ -169,27 +171,26 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_instanceHandle = GCHandle.Alloc(this);
         m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, (IntPtr)m_instanceHandle);
 
-        // Call resize which will create a texture and a webview for us if they do not exist yet at this point.
         Resize(m_Width, m_Height);
 
+        Material mat = m_TargetMaterial;
+        if (mat == null && GetComponent<Renderer>())
+        {
+            // If no material is given, use the first one in the Renderer component
+            mat = GetComponent<Renderer>().materials[0];
+        }
+
+        if (mat != null)
+        {
+            string tex_name = m_IsAlpha ? "_AlphaTex" : "_MainTex";
+            mat.SetTexture(tex_name, m_Texture);
+            mat.SetTextureScale(tex_name, new Vector2(Mathf.Abs(mat.mainTextureScale.x) * (m_FlipX ? -1F : 1F),
+                                                      Mathf.Abs(mat.mainTextureScale.y) * (m_FlipY ? -1F : 1F)));
+        }
+        else
         if (GetComponent<GUITexture>())
         {
             GetComponent<GUITexture>().texture = m_Texture;
-        }
-        else if (GetComponent<Renderer>() && GetComponent<Renderer>().material)
-        {
-            if (!m_IsAlpha)
-            {
-                GetComponent<Renderer>().material.mainTexture = m_Texture;
-                GetComponent<Renderer>().material.mainTextureScale = new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
-                                                                                 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f));
-            }
-            else
-            {
-                GetComponent<Renderer>().material.SetTexture("_AlphaTex", m_Texture);
-                GetComponent<Renderer>().material.SetTextureScale("_AlphaTex", new Vector2(Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.x) * (m_FlipX ? -1.0f : 1.0f),
-                                                                                 Mathf.Abs(GetComponent<Renderer>().material.mainTextureScale.y) * (m_FlipY ? -1.0f : 1.0f)));
-            }
         }
         else
         {
