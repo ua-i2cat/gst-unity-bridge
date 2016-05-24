@@ -73,7 +73,8 @@ example from https://cgit.freedesktop.org/gstreamer/gst-rtsp-server/
 DEBUG OUTPUT
 
 - Enabled: Enable to write debug output to the Unity Editor Console, LogCat on
-    Android or gub.txt on a Standalone player.
+    Android or gub.txt on a Standalone player. Does not work properly when there
+	is more than one instance of the plugin with different Debug settings.
 - GStreamerDebugString: Comma-separated list of categories and log levels as
     used with the GST_DEBUG environment variable. Setting to '2' is normally
     enough. Leave empty to disable GStreamer debug output.
