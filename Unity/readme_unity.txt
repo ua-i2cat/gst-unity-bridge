@@ -28,6 +28,8 @@ PROPERTIES
     video stream. This is a zero-based index. -1 disables video altogether.
 - Audio Index: Which stream to use when the input URI contains more than one
     audio stream. This is a zero-based index. -1 disables audio altogether.
+- Target Material: Optional material whose texture will be replaced. If it is
+    None, the first material in the Renderer of this GameObject will be used.
 - Initialize On Start: Whether the GStreamer pipeline must be created and set
     to PLAYING when the scene is loaded. Leave this on unless you plan to
     activate the pipeline manually from a script later on by calling
