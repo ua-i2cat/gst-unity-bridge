@@ -96,6 +96,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     [Tooltip("Zero-based index of the audio stream to use (-1 disables audio)")]
     public int m_AudioIndex = 0;
 
+    [Tooltip("Optional material whose texture will be replaced. If None, the first material in the Renderer of this GameObject will be used.")]
     public Material m_TargetMaterial;
 
     [SerializeField]
