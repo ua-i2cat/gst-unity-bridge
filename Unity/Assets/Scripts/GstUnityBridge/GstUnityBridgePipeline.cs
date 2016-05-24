@@ -160,7 +160,6 @@ public class GstUnityBridgePipeline
     internal void SetupDecoding(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, float crop_left, float crop_top, float crop_right, float crop_bottom)
     {
         gub_pipeline_setup_decoding(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, crop_left, crop_top, crop_right, crop_bottom);
-        Debug.Log("Decoding setup complete");
     }
 
     internal bool GrabFrame(out Vector2 frameSize)
@@ -186,7 +185,6 @@ public class GstUnityBridgePipeline
     internal void SetupEncoding(string filename, int width, int height)
     {
         gub_pipeline_setup_encoding(m_Instance, filename, width, height);
-        Debug.Log("Encoding setup complete");
     }
 
     internal void ConsumeImage(System.IntPtr ptr, int size)
