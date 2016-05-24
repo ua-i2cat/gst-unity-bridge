@@ -178,7 +178,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (mat == null && GetComponent<Renderer>())
         {
             // If no material is given, use the first one in the Renderer component
-            mat = GetComponent<Renderer>().materials[0];
+            mat = GetComponent<Renderer>().material;
         }
 
         if (mat != null)
