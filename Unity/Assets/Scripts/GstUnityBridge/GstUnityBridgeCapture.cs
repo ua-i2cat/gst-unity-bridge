@@ -53,7 +53,7 @@ class GstUnityBridgeCapture : MonoBehaviour
             log_handler = (int level, string message) => Debug.logger.Log((LogType)level, "GUB", message);
         }
 
-        GStreamer.Ref("2,encode*:5", log_handler);
+        GStreamer.Ref("2", log_handler);
         m_instanceHandle = GCHandle.Alloc(this);
         m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, null, (System.IntPtr)m_instanceHandle);
     }
@@ -61,7 +61,7 @@ class GstUnityBridgeCapture : MonoBehaviour
     void Start()
     {
         Initialize();
-        if (m_Filename == null)
+        if (string.IsNullOrEmpty(m_Filename))
         {
             Debug.LogError("Please provide a filename");
             return;
