@@ -46,6 +46,24 @@ EVENTS
 
 - OnFinish: Called when the media ends.
 - OnError (string message): Called when there is any kind of error.
+- OnQOS (QosData data): Called when frames are discarded due to lateness.
+    The QosData structure contains information about the discarded frame and
+    statistics regarding the whole playback session:
+    current_jitter: Nanoseconds. How late a buffer was. Negative is early,
+        positive is late. Early buffers are not reported.
+    current_running_time: Nanoseconds. Running time when the late buffer was
+        reported.
+    current_stream_time: Nanoseconds. Stream time when the late buffer was
+        reported.
+    current_timestamp: Nanoseconds. Timestamp of the late buffer.
+    proportion: Long term prediction of the ideal rate relative to normal rate
+        to get optimal quality.
+    processed: Total number of correctly processed frames.
+    dropped: Total number of dropped frames, because they were late.
+
+    Fore more information:
+    https://gstreamer.freedesktop.org/data/doc/gstreamer/head/pwg/html/chapter-advanced-qos.html
+    https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/GstMessage.html#gst-message-parse-qos
 
 VIDEO CROPPING
 
@@ -74,7 +92,7 @@ DEBUG OUTPUT
 
 - Enabled: Enable to write debug output to the Unity Editor Console, LogCat on
     Android or gub.txt on a Standalone player. Does not work properly when there
-	is more than one instance of the plugin with different Debug settings.
+    is more than one instance of the plugin with different Debug settings.
 - GStreamerDebugString: Comma-separated list of categories and log levels as
     used with the GST_DEBUG environment variable. Setting to '2' is normally
     enough. Leave empty to disable GStreamer debug output.
