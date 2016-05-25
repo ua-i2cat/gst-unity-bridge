@@ -97,6 +97,7 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
     gub_destroy_graphic_context(pipeline->graphic_context);
     if (pipeline->pipeline) {
         gst_element_set_state(GST_ELEMENT(pipeline->pipeline), GST_STATE_NULL);
+        gst_object_unref(pipeline->pipeline);
     }
     if (pipeline->last_sample) {
         gst_sample_unref(pipeline->last_sample);
