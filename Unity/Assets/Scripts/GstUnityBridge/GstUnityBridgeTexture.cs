@@ -170,13 +170,13 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        self.m_EventProcessor.QueueEvent(() =>
+        if (self.m_Events.m_OnError != null)
         {
-            if (self.m_Events.m_OnError != null)
+            self.m_EventProcessor.QueueEvent(() =>
             {
                 self.m_Events.m_OnError.Invoke(message);
-            }
-        });
+            });
+        }
     }
 
     private static void OnQos(IntPtr p,
@@ -185,9 +185,9 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        self.m_EventProcessor.QueueEvent(() =>
+        if (self.m_Events.m_OnQOS != null)
         {
-            if (self.m_Events.m_OnQOS != null)
+            self.m_EventProcessor.QueueEvent(() =>
             {
                 QosData data = new QosData()
                 {
@@ -200,8 +200,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
                     dropped = dropped
                 };
                 self.m_Events.m_OnQOS.Invoke(data);
-            }
-        });
+            });
+        }
     }
 
     public void Initialize()
