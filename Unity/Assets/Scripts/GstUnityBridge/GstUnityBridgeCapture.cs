@@ -54,7 +54,7 @@ class GstUnityBridgeCapture : MonoBehaviour
 
         GStreamer.Ref("2", log_handler);
         m_instanceHandle = GCHandle.Alloc(this);
-        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, null, (System.IntPtr)m_instanceHandle);
+        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, null, null, (System.IntPtr)m_instanceHandle);
     }
 
     void Start()

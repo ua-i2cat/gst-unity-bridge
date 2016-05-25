@@ -66,6 +66,32 @@ public class GstUnityBridgeDebugParams
 [Serializable]
 public class StringEvent : UnityEvent<string> { }
 
+// To understand the QoS (Quality of Service) data, read this:
+// https://gstreamer.freedesktop.org/data/doc/gstreamer/head/pwg/html/chapter-advanced-qos.html
+// https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/GstMessage.html#gst-message-parse-qos
+[Serializable]
+public class QosData
+{
+    // Nanoseconds. How late a buffer was. Negative is early, positive is late.
+    // Early buffers are not reported, obviously.
+    public long current_jitter;
+    // Nanoseconds. Running time when the late buffer was reported.
+    public ulong current_running_time;
+    // Nanoseconds. Stream time when the late buffer was reported.
+    public ulong current_stream_time;
+    // Nanoseconds. Timestamp of the late buffer.
+    public ulong current_timestamp;
+    // Long term prediction of the ideal rate relative to normal rate to get optimal quality.
+    public double proportion;
+    // Total number of correctly processed frames.
+    public ulong processed;
+    // Total number of dropped frames, because they were late.
+    public ulong dropped;
+}
+
+[Serializable]
+public class QosEvent : UnityEvent<QosData> { }
+
 [Serializable]
 public class GstUnityBridgeEventParams
 {
@@ -73,6 +99,8 @@ public class GstUnityBridgeEventParams
     public UnityEvent m_OnFinish;
     [Tooltip("Called when GStreamer reports an error")]
     public StringEvent m_OnError;
+    [Tooltip("Called when a Quality Of Service event occurs")]
+    public QosEvent m_OnQOS;
 }
 
 public class GstUnityBridgeTexture : MonoBehaviour
@@ -151,6 +179,31 @@ public class GstUnityBridgeTexture : MonoBehaviour
         });
     }
 
+    private static void OnQos(IntPtr p,
+        long current_jitter, ulong current_running_time, ulong current_stream_time, ulong current_timestamp,
+        double proportion, ulong processed, ulong dropped)
+    {
+        GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
+
+        self.m_EventProcessor.QueueEvent(() =>
+        {
+            if (self.m_Events.m_OnQOS != null)
+            {
+                QosData data = new QosData()
+                {
+                    current_jitter = current_jitter,
+                    current_running_time = current_running_time,
+                    current_stream_time = current_stream_time,
+                    current_timestamp = current_timestamp,
+                    proportion = proportion,
+                    processed = processed,
+                    dropped = dropped
+                };
+                self.m_Events.m_OnQOS.Invoke(data);
+            }
+        });
+    }
+
     public void Initialize()
     {
         m_HasBeenInitialized = true;
@@ -170,7 +223,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ? null : m_DebugOutput.m_GStreamerDebugString, log_handler);
 
         m_instanceHandle = GCHandle.Alloc(this);
-        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, (IntPtr)m_instanceHandle);
+        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, OnQos, (IntPtr)m_instanceHandle);
 
         Resize(m_Width, m_Height);
 

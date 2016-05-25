@@ -35,6 +35,9 @@ typedef struct _GUBPipeline GUBPipeline;
 
 typedef void (*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
 typedef void(*GUBPipelineOnErrorPFN)(GUBPipeline *userdata, char *message);
+typedef void(*GUBPipelineOnQosPFN)(GUBPipeline *userdata,
+    gint64 current_jitter, guint64 current_running_time, guint64 current_stream_time, guint64 current_timestamp,
+    gdouble proportion, guint64 processed, guint64 dropped);
 
 struct _GUBPipeline {
     char *name;
@@ -56,6 +59,7 @@ struct _GUBPipeline {
 
     GUBPipelineOnEosPFN on_eos_handler;
     GUBPipelineOnErrorPFN on_error_handler;
+    GUBPipelineOnQosPFN on_qos_handler;
     void *userdata;
 
     GstAppSrc *appsrc;
@@ -73,13 +77,16 @@ void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
     g_free(final_string);
 }
 
-EXPORT_API void *gub_pipeline_create(const char *name, GUBPipelineOnEosPFN eos_handler, GUBPipelineOnErrorPFN error_handler, void *userdata)
+EXPORT_API void *gub_pipeline_create(const char *name,
+    GUBPipelineOnEosPFN eos_handler, GUBPipelineOnErrorPFN error_handler, GUBPipelineOnQosPFN qos_handler,
+    void *userdata)
 {
     GUBPipeline *pipeline = (GUBPipeline *)malloc(sizeof(GUBPipeline));
     memset(pipeline, 0, sizeof(GUBPipeline));
     pipeline->name = g_strdup(name);
     pipeline->on_eos_handler = eos_handler;
     pipeline->on_error_handler = error_handler;
+    pipeline->on_qos_handler = qos_handler;
     pipeline->userdata = userdata;
 
     return pipeline;
@@ -207,6 +214,21 @@ static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipe
     case GST_MESSAGE_EOS:
         if (pipeline->on_eos_handler != NULL) {
             pipeline->on_eos_handler(pipeline->userdata);
+        }
+        break;
+    case GST_MESSAGE_QOS:
+        if (pipeline->on_qos_handler != NULL) {
+            guint64 running_time;
+            guint64 stream_time;
+            guint64 timestamp;
+            gint64 jitter;
+            gdouble proportion;
+            guint64 processed;
+            guint64 dropped;
+            gst_message_parse_qos(message, NULL, &running_time, &stream_time, &timestamp, NULL);
+            gst_message_parse_qos_values(message, &jitter, &proportion, NULL);
+            gst_message_parse_qos_stats(message, NULL, &processed, &dropped);
+            pipeline->on_qos_handler(pipeline->userdata, jitter, running_time, stream_time, timestamp, proportion, processed, dropped);
         }
         break;
     }

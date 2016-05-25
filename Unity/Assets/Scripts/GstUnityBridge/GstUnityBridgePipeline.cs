@@ -51,6 +51,7 @@ public class GstUnityBridgePipeline
         [MarshalAs(UnmanagedType.LPStr)]string name,
         System.IntPtr eos_pfn,
         System.IntPtr error_pfn,
+        System.IntPtr qos_pfn,
         System.IntPtr userdata);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -74,6 +75,11 @@ public class GstUnityBridgePipeline
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void GUBPipelineOnErrorPFN(System.IntPtr p,
         [MarshalAs(UnmanagedType.LPStr)]string message);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void GUBPipelineOnQosPFN(System.IntPtr p,
+        long current_jitter, ulong current_running_time, ulong current_stream_time, ulong current_timestamp,
+    double proportion, ulong processed, ulong dropped);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private double gub_pipeline_get_duration(System.IntPtr p);
@@ -149,11 +155,12 @@ public class GstUnityBridgePipeline
         set { gub_pipeline_set_position(m_Instance, value); }
     }
 
-    internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, System.IntPtr userdata)
+    internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, GUBPipelineOnQosPFN qos_pfn, System.IntPtr userdata)
     {
         m_Instance = gub_pipeline_create(name,
             eos_pfn == null ? (System.IntPtr)null : Marshal.GetFunctionPointerForDelegate(eos_pfn),
             error_pfn == null ? (System.IntPtr)null : Marshal.GetFunctionPointerForDelegate(error_pfn),
+            qos_pfn == null ? (System.IntPtr)null : Marshal.GetFunctionPointerForDelegate(qos_pfn),
             userdata);
     }
 
