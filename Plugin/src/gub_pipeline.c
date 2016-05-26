@@ -264,7 +264,7 @@ beach:
 }
 
 EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
-    const gchar *net_clock_addr, int net_clock_port,
+    const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
     float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
     GError *err = NULL;
@@ -353,6 +353,14 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
 
         gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
         gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
+
+        if (basetime != 0)
+        {
+            gst_element_set_base_time(pipeline->pipeline, (GstClockTime)basetime);
+            gub_log_pipeline(pipeline, "Setting basetime to %lldns", basetime);
+            // Disable GstPipeline automatic handling of basetime
+            gst_element_set_start_time(pipeline->pipeline, GST_CLOCK_TIME_NONE);
+        }
     }
 }
 

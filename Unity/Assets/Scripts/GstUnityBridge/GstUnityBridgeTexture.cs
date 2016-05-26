@@ -43,12 +43,19 @@ public class GstUnityBridgeCroppingParams
 [Serializable]
 public class GstUnityBridgeSynchronizationParams
 {
-    [Tooltip("If unchecked, next two items are unused")]
+    [Tooltip("If unchecked, the rest of the items are unused")]
     public bool m_Enabled = false;
     [Tooltip("IP address or host name of the GStreamer network clock provider")]
     public string m_MasterClockAddress = "";
     [Tooltip("Port of the GStreamer network clock provider")]
     public int m_MasterClockPort = 0;
+#if !EXPERIMENTAL
+    [HideInInspector]
+#endif
+    [Tooltip("Basetime allows connecting to an already playing pipeline, " +
+        "by using the same basetime on all players. Set to 0 to start " +
+        "playing the media from the beginning (normal use).")]
+    public ulong m_BaseTime = 0;
 }
 
 [Serializable]
@@ -290,6 +297,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_Pipeline.SetupDecoding(m_URI, m_VideoIndex, m_AudioIndex,
             m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
             m_NetworkSynchronization.m_MasterClockPort,
+            m_NetworkSynchronization.m_BaseTime,
             m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
     }
 
