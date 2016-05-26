@@ -73,7 +73,7 @@ void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
     gchar *final_string = g_strdup_vprintf(new_format, argptr);
     g_free(new_format);
     va_end(argptr);
-    gub_log(final_string);
+    gub_log("%s", final_string);
     g_free(final_string);
 }
 
