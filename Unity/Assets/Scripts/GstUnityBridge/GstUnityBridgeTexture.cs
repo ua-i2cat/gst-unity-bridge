@@ -102,11 +102,13 @@ public class QosEvent : UnityEvent<QosData> { }
 [Serializable]
 public class GstUnityBridgeEventParams
 {
-    [Tooltip("Called when media reaches the end")]
+    [Header("Called when the first frame is available")]
+    public UnityEvent m_OnStart;
+    [Header("Called when media reaches the end")]
     public UnityEvent m_OnFinish;
-    [Tooltip("Called when GStreamer reports an error")]
+    [Header("Called when GStreamer reports an error")]
     public StringEvent m_OnError;
-    [Tooltip("Called when a Quality Of Service event occurs")]
+    [Header("Called when a Quality Of Service event occurs")]
     public QosEvent m_OnQOS;
 }
 
@@ -150,6 +152,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private int m_Height = 64;
     private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
+    private bool m_FirstFrame = true;
 
     void Awake()
     {
@@ -315,6 +318,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public void Play()
     {
         m_Pipeline.Play();
+        m_FirstFrame = true;
     }
 
     public void Pause()
@@ -371,6 +375,14 @@ public class GstUnityBridgeTexture : MonoBehaviour
                 Debug.LogError(string.Format("[{0}] The GstTexture does not have a texture assigned and will not paint.", name));
             else
                 m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
+            if (m_FirstFrame)
+            {
+                if (m_Events.m_OnStart != null)
+                {
+                    m_Events.m_OnStart.Invoke();
+                }
+                m_FirstFrame = false;
+            }
         }
     }
 }
