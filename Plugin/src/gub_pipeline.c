@@ -551,3 +551,12 @@ EXPORT_API void gub_pipeline_stop_encoding(GUBPipeline *pipeline)
         gst_app_src_end_of_stream(pipeline->appsrc);
     }
 }
+
+EXPORT_API void gub_pipeline_set_volume(GUBPipeline *pipeline, gdouble volume)
+{
+    if (volume < 0.f) volume = 0.f;
+    if (volume > 1.f) volume = 1.f;
+
+    gub_log_pipeline(pipeline, "Setting volume to %g", volume);
+    g_object_set(pipeline->pipeline, "volume", volume, NULL);
+}

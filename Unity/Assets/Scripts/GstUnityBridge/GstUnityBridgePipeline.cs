@@ -102,6 +102,9 @@ public class GstUnityBridgePipeline
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_stop_encoding(System.IntPtr p);
 
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_set_volume(System.IntPtr p, double volume);
+
     protected System.IntPtr m_Instance;
 
     internal bool IsLoaded
@@ -203,5 +206,10 @@ public class GstUnityBridgePipeline
     internal void StopEncoding()
     {
         gub_pipeline_stop_encoding(m_Instance);
+    }
+
+    internal void SetVolume(double volume)
+    {
+        gub_pipeline_set_volume(m_Instance, volume);
     }
 }

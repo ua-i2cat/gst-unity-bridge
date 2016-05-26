@@ -136,6 +136,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
     [Tooltip("Optional material whose texture will be replaced. If None, the first material in the Renderer of this GameObject will be used.")]
     public Material m_TargetMaterial;
 
+    [Tooltip("From 0 (mute) to 1 (max volume)")]
+    [Range(0,1)]
+    public double m_AudioVolume = 1.0F;
+
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
     public bool m_InitializeOnStart = true;
@@ -317,6 +321,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     public void Play()
     {
+        m_Pipeline.SetVolume(m_AudioVolume);
         m_Pipeline.Play();
         m_FirstFrame = true;
     }
@@ -360,6 +365,15 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool IsPlaying
     {
         get { return m_Pipeline != null ? m_Pipeline.IsPlaying : false; }
+    }
+
+    public void SetVolume(double volume)
+    {
+        if (m_Pipeline != null)
+        {
+            m_Pipeline.SetVolume(volume);
+        }
+        m_AudioVolume = volume;
     }
 
     void Update()
