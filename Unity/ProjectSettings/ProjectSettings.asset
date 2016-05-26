@@ -363,6 +363,7 @@ PlayerSettings:
   spritePackerPolicy: 
   scriptingDefineSymbols:
     1: EXPERIMENTAL
+    7: EXPERIMENTAL
   metroPackageName: GstUnityBridgeTest1
   metroPackageVersion: 
   metroCertificatePath: 
