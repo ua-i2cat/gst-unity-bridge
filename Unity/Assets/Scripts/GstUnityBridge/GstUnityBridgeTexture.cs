@@ -266,7 +266,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning(string.Format("[{0}] There is no Renderer or guiTexture attached to this GameObject! GstTexture will render to a texture but it will not be visible.", name));
+            Debug.LogWarning(string.Format("[{0}] There is no Renderer or guiTexture attached to this GameObject, and TargetMaterial is not set.", name + GetInstanceID()));
         }
 
     }
@@ -399,7 +399,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         {
             Resize((int)sz.x, (int)sz.y);
             if (m_Texture == null)
-                Debug.LogError(string.Format("[{0}] The GstTexture does not have a texture assigned and will not paint.", name));
+                Debug.LogWarning(string.Format("[{0}] The GUBTexture does not have a texture assigned and will not paint.", name + GetInstanceID()));
             else
                 m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
             if (m_FirstFrame)
