@@ -140,6 +140,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
     [Range(0,1)]
     public double m_AudioVolume = 1.0F;
 
+    [Tooltip("When using Adaptive Streaming (DASH or HLS) this allows setting a limit on the bitrate from 0 (minimum quality) to 1 (maximum quality)")]
+    [Range(0, 1)]
+    public float m_AdaptiveBitrateLimit = 1.0F;
+
     [SerializeField]
     [Tooltip("Leave always ON, unless you plan to activate it manually")]
     public bool m_InitializeOnStart = true;
@@ -376,6 +380,15 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_AudioVolume = volume;
     }
 
+    public void SetAdaptiveBitrateLimit(float bitrate_limit)
+    {
+        if (m_Pipeline != null)
+        {
+            m_Pipeline.SetAdaptiveBitrateLimit(bitrate_limit);
+        }
+        m_AdaptiveBitrateLimit = bitrate_limit;
+    }
+
     void Update()
     {
         if (m_Pipeline == null)
@@ -391,6 +404,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
                 m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
             if (m_FirstFrame)
             {
+                if (m_AdaptiveBitrateLimit != 1.0F)
+                {
+                    SetAdaptiveBitrateLimit(m_AdaptiveBitrateLimit);
+                }
                 if (m_Events.m_OnStart != null)
                 {
                     m_Events.m_OnStart.Invoke();
