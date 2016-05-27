@@ -105,6 +105,9 @@ public class GstUnityBridgePipeline
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_set_volume(System.IntPtr p, double volume);
 
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_set_adaptive_bitrate_limit(System.IntPtr p, float bitrate_limit);
+
     protected System.IntPtr m_Instance;
 
     internal bool IsLoaded
@@ -211,5 +214,10 @@ public class GstUnityBridgePipeline
     internal void SetVolume(double volume)
     {
         gub_pipeline_set_volume(m_Instance, volume);
+    }
+
+    internal void SetAdaptiveBitrateLimit(float bitrate_limit)
+    {
+        gub_pipeline_set_adaptive_bitrate_limit(m_Instance, bitrate_limit);
     }
 }

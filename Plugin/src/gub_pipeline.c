@@ -33,7 +33,7 @@
 
 typedef struct _GUBPipeline GUBPipeline;
 
-typedef void (*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
+typedef void(*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
 typedef void(*GUBPipelineOnErrorPFN)(GUBPipeline *userdata, char *message);
 typedef void(*GUBPipelineOnQosPFN)(GUBPipeline *userdata,
     gint64 current_jitter, guint64 current_running_time, guint64 current_stream_time, guint64 current_timestamp,
@@ -559,4 +559,29 @@ EXPORT_API void gub_pipeline_set_volume(GUBPipeline *pipeline, gdouble volume)
 
     gub_log_pipeline(pipeline, "Setting volume to %g", volume);
     g_object_set(pipeline->pipeline, "volume", volume, NULL);
+}
+
+static gint compare_name_func(const GValue *value, const gchar *pattern)
+{
+    GstElement *element = g_value_get_object(value);
+    return g_regex_match_simple (pattern, g_type_name(gst_element_factory_get_element_type(gst_element_get_factory(element))), 0, 0) ? 0 : 1;
+}
+
+EXPORT_API void gub_pipeline_set_adaptive_bitrate_limit(GUBPipeline *pipeline, gfloat bitrate_limit)
+{
+    GValue elem = G_VALUE_INIT;
+    GstIterator *it = gst_bin_iterate_recurse(GST_BIN(pipeline->pipeline));
+    if (gst_iterator_find_custom(it, (GCompareFunc)compare_name_func, &elem, "^(GstDashDemux|GstHLSDemux)$"))
+    {
+        GstElement *demux = GST_ELEMENT(g_value_get_object(&elem));
+        gchar *name = gst_element_get_name(demux);
+        gub_log_pipeline(pipeline, "Setting bitrate-limit of adaptive demuxer %s to %f", name, bitrate_limit);
+        g_free(name);
+        g_object_set(demux, "bitrate-limit", bitrate_limit, NULL);
+    }
+    else
+    {
+        gub_log_pipeline(pipeline, "Could not find any adaptive demuxer in the pipeline (Have you waited for OnStart before setting the bitrate?)");
+    }
+    gst_iterator_free(it);
 }
