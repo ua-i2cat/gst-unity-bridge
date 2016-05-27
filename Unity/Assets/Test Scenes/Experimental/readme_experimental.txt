@@ -5,6 +5,8 @@ The scenes contained in this folder demonstrate some features of the GStreamer
 Movie Texture which are still marked as EXPERIMENTAL, meaning that they might
 be unstable, deprecated in the future or their usage might change. In any case,
 they should not be relied upon.
+To enable them, write EXPERIMENTAL in the Script Define Symbol box in the
+Player Settings (Under Other Settings).
 
 These features are:
 
