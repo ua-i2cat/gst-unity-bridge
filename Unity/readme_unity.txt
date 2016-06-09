@@ -114,6 +114,15 @@ A number of methods ara available through scripting:
     No description. You have to guess.
     Play() is called automatically from Start() if InitializeOnStart=true.
 
+ANDROID NOTES
+-------------
+
+The version of GStreamer used does not support OpenGLES3 yet, therefore, Unity
+must be forced to use OpenGLES2 instead. To do so, go to:
+Edit -> Project Settings -> Player -> Android -> Other Settings -> Rendering
+And set "Auto Graphics API" to OFF.
+Then, in the list of graphic APIs, remove OpenGLES3 and leave only OpenGLES2.
+
 SOURCE CODE
 -----------
 
