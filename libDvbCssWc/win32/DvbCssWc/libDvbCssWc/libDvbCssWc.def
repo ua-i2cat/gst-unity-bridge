@@ -1,0 +1,3 @@
+EXPORTS
+gst_dvb_css_wc_server_new
+gst_dvb_css_wc_client_clock_new

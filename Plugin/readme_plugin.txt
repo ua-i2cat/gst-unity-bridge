@@ -11,10 +11,21 @@ The project already copies the resulting GstUnityBridge.dll to the Unity\Assets\
 
 2. Building the plugin for Android
 
-First off, some patches for GStreamer are needed ($GST_PREFIX is the folder where you installed GStreamer, for example, `C:\gstreamer\1.0\android-arm`):
+-Download Android SDK (Linux version) command line tools from https://developer.android.com/studio/index.html
+-Add SDK tools dir to PATH
+-Call "android update sdk --no-ui"
 
-- Take this into account if using a GStreamer version below 1.6.2: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
-- In $GST_PREFIX/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h, make sure GST_GL_HAVE_GLSYNC is defined to 1
+-Download Android NDK (Linux) command line tools from https://developer.android.com/ndk/downloads/index.html
+-Add NDK root dir to PATH
+
+-Download Gstreamer Android (arm64) tar from https://gstreamer.freedesktop.org/data/pkg/android/
+-Add GSTREAMER_ROOT_ANDROID variable and point it to the extracted tar root
+-Inside a gstreamer-1.0-android-arm64-1.8.1/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h set:
+#define GST_GL_HAVE_GLSYNC 1
+#define GST_GL_HAVE_GLUINT64 1
+#define GST_GL_HAVE_GLINT64 1
+
+-Add some patches if using a GStreamer version below 1.6.2: https://bug757732.bugzilla-attachments.gnome.org/attachment.cgi?id=315055
 
 Then, the usual:
 
