@@ -465,7 +465,7 @@ struct candidate
 
 Candidate* candidate_new(GstDvbCssWcPacket *msg, GstClockTime time)
 {
-    Candidate* ret = malloc(sizeof(Candidate));
+    Candidate* ret = g_malloc(sizeof(Candidate));
     ret->t1 = wc_timestamp_to_gst_clock_time(msg->originate_timevalue_secs, msg->originate_timevalue_nanos);    
     ret->t2 = msg->receive_timevalue;
     ret->t3 = msg->transmit_timevalue;
@@ -522,7 +522,10 @@ gst_dvb_css_wc_client_clock_update(GstDvbCssWcClientClock *self, GstDvbCssWcPack
             self->priv->best_candidate = candidate;           
             gst_clock_get_calibration (self->priv->internal_clock, &internal, &external, &rate_num, &rate_denom);
             gst_clock_set_calibration(self->priv->internal_clock, internal, external + candidate->offset, rate_num, rate_denom);                        
-        }          
+		}
+		else {
+			g_free(candidate);
+		}
     }             
 }
 

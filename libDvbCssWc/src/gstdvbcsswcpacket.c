@@ -292,7 +292,7 @@ gst_dvb_css_wc_packet_send (const GstDvbCssWcPacket * packet,
 
 gint8 gst_dvb_css_wc_packet_encode_precision(gdouble precisionSecs)
 {        
-    return ceil(log2((precisionSecs)));
+    return (gint8)ceil(log2((precisionSecs)));
 }
 
 gdouble gst_dvb_css_wc_packet_decode_precision(gint8 precision)
@@ -302,7 +302,7 @@ gdouble gst_dvb_css_wc_packet_decode_precision(gint8 precision)
 
 guint32 gst_dvb_css_wc_packet_encode_max_freq_error(gdouble max_freq_error_ppm)
 {    
-    return ceil(max_freq_error_ppm*256);
+    return (guint32)ceil(max_freq_error_ppm*256);
 }
 
 gdouble gst_dvb_css_wc_packet_decode_max_freq_error(guint32 max_freq_error)
