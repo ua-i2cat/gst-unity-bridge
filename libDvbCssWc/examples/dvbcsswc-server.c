@@ -24,7 +24,7 @@
 
 #include <stdlib.h>
 #include <gst/gst.h>
-#include <gst/net/gstdvbcsswcserver.h>
+#include <gstdvbcsswcserver.h>
 
 gint
 main (gint argc, gchar * argv[])
