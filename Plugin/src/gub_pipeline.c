@@ -23,6 +23,7 @@
 #include <gst/net/gstnet.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/pbutils/encoding-profile.h>
+#include <gstdvbcsswcclient.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -263,9 +264,9 @@ beach:
     return ret;
 }
 
-EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
+EXPORT_API void gub_pipeline_setup_decoding2(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
     const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
-    float crop_left, float crop_top, float crop_right, float crop_bottom)
+    float crop_left, float crop_top, float crop_right, float crop_bottom, gboolean isDvbWc)
 {
     GError *err = NULL;
     GstElement *vsink;
@@ -335,7 +336,12 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
     if (net_clock_addr != NULL) {
         gint64 start, stop;
         gub_log_pipeline(pipeline, "Trying to synchronize to network clock at %s %d", net_clock_addr, net_clock_port);
-        pipeline->net_clock = gst_net_client_clock_new("net_clock", net_clock_addr, net_clock_port, 0);
+		if (isDvbWc == FALSE) {
+			pipeline->net_clock = gst_net_client_clock_new("net_clock", net_clock_addr, net_clock_port, 0);
+		}
+		else{
+			pipeline->net_clock = gst_dvb_css_wc_client_clock_new("dvb_clock", net_clock_addr, net_clock_port, 0);
+		}
         if (!pipeline->net_clock) {
             gub_log_pipeline(pipeline, "Could not create network clock at %s %d", net_clock_addr, net_clock_port);
             return;
@@ -362,6 +368,13 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
             gst_element_set_start_time(pipeline->pipeline, GST_CLOCK_TIME_NONE);
         }
     }
+}
+
+EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
+	const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
+	float crop_left, float crop_top, float crop_right, float crop_bottom)
+{
+	gub_pipeline_setup_decoding2(pipeline, uri, video_index, audio_index, net_clock_addr, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom, FALSE);
 }
 
 EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int *height)
