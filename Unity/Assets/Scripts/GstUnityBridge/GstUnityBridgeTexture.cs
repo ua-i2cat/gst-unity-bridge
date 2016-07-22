@@ -49,6 +49,8 @@ public class GstUnityBridgeSynchronizationParams
     public string m_MasterClockAddress = "";
     [Tooltip("Port of the GStreamer network clock provider")]
     public int m_MasterClockPort = 0;
+    [Tooltip("Activate the Dvb Wallclock system, instead of GStreamers default")]
+    public bool m_isDvbWC = false;
 #if !EXPERIMENTAL
     [HideInInspector]
 #endif
@@ -309,7 +311,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
             m_NetworkSynchronization.m_MasterClockPort,
             m_NetworkSynchronization.m_BaseTime,
-            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
+            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom,
+            m_NetworkSynchronization.m_isDvbWC);
     }
 
     public void Destroy()
