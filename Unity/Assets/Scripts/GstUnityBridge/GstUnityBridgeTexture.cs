@@ -397,24 +397,31 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (m_Pipeline == null)
             return;
 
-        Vector2 sz;
-        if (m_Pipeline.GrabFrame(out sz))
+        Vector2 sz = Vector2.zero;
+        if (m_Pipeline.GrabFrame(ref sz))
         {
             Resize((int)sz.x, (int)sz.y);
             if (m_Texture == null)
+            {
                 Debug.LogWarning(string.Format("[{0}] The GUBTexture does not have a texture assigned and will not paint.", name + GetInstanceID()));
+            }
             else
+            {
                 m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
+            }
+
             if (m_FirstFrame)
             {
                 if (m_AdaptiveBitrateLimit != 1.0F)
                 {
                     SetAdaptiveBitrateLimit(m_AdaptiveBitrateLimit);
                 }
+
                 if (m_Events.m_OnStart != null)
                 {
                     m_Events.m_OnStart.Invoke();
                 }
+
                 m_FirstFrame = false;
             }
         }
