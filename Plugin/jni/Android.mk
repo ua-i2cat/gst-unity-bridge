@@ -1,9 +1,11 @@
 LOCAL_PATH := $(call my-dir)
+DVB_WC_PATH = $(LOCAL_PATH)/../../libDvbCssWc/
 
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := GstUnityBridge
-LOCAL_SRC_FILES := ../src/gub_graphics.c ../src/gub_gstreamer.c ../src/gub_pipeline.c ../src/gub_log.c
+LOCAL_C_INCLUDES := $(DVB_WC_PATH)/src/
+LOCAL_SRC_FILES := ../src/gub_graphics.c ../src/gub_gstreamer.c ../src/gub_pipeline.c ../src/gub_log.c ../../libDvbCssWc/src/gstdvbcsswcclient.c ../../libDvbCssWc/src/gstdvbcsswcpacket.c
 LOCAL_SHARED_LIBRARIES := gstreamer_android
 LOCAL_LDLIBS := -llog -landroid -lGLESv2
 include $(BUILD_SHARED_LIBRARY)
