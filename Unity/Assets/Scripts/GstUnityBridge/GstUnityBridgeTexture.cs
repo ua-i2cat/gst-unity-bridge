@@ -156,7 +156,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public GstUnityBridgeSynchronizationParams m_NetworkSynchronization = new GstUnityBridgeSynchronizationParams();
     public GstUnityBridgeDebugParams m_DebugOutput = new GstUnityBridgeDebugParams();
 
-    private GstUnityBridgePipeline m_Pipeline;
+    private GstUnityBridgePipeline m_Pipeline = null;
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
@@ -277,10 +277,18 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         if (m_InitializeOnStart && !m_HasBeenInitialized)
         {
-            Initialize();
-            Setup(m_URI, m_VideoIndex, m_AudioIndex);
-            Play();
+            InitializeSetupPlay();
         }
+    }
+
+   public void InitializeSetupPlay()
+    {
+
+        Initialize();
+        Setup(m_URI, m_VideoIndex, m_AudioIndex);
+        Play();
+
+
     }
 
     public void Resize(int _Width, int _Height)
@@ -340,7 +348,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     public void Stop()
     {
-        m_Pipeline.Stop();
+        if(m_Pipeline != null)
+            m_Pipeline.Stop();
     }
 
     public void Close()
