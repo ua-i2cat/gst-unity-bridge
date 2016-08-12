@@ -11,9 +11,21 @@ On Linux:
 -On older distros install gstreamer 1.8.1 and missing dependencies
 
 On Windows:
+-For x86 download gstreamer-1.0-devel-x86-1.8.1.msi and gstreamer-1.0-x86-1.8.1.msi from https://gstreamer.freedesktop.org/download/ and install it.
+-For x64 download gstreamer-1.0-devel-x86_64-1.8.1.msi and gstreamer-1.0-x86_64-1.8.1.msi from https://gstreamer.freedesktop.org/download/ and install it.
+-Make sure the GSTREAMER_1_0_ROOT_X86 or GSTREAMER_1_0_ROOT_X86_64 environment variable is defined and points to the proper place.
 -Open: win32/*sln in Visual Studio 2015
--Download gstreamer-1.0-devel-x86_64-1.8.1.msi and gstreamer-1.0-x86_64-1.8.1.msi from https://gstreamer.freedesktop.org/download/ and install it.
--Compile on VS for x86 platform
+-Compile in VS for selected platform
+
+# Running
+Make sure that at runtime, GStreamer can access its libraries and plugins. It can be done by adding %GSTREAMER_SDK_ROOT_X86%\bin to the %PATH% environment variable,
+or by running the application from this same folder.
+
+List of dependecies on Windows:
+-libglib-2.0-0.dll
+-libgobject-2.0-0.dll
+-libgstreamer-1.0-0.dll
+-libwinpthread-1.dll
 
 # TODO
 
