@@ -18,9 +18,9 @@ The project already copies the resulting GstUnityBridge.dll to the Unity\Assets\
 -Download Android NDK (Linux) command line tools from https://developer.android.com/ndk/downloads/index.html
 -Add NDK root dir to PATH
 
--Download Gstreamer Android (arm64) tar from https://gstreamer.freedesktop.org/data/pkg/android/
+-Download Gstreamer Android (for selected platform arm, arm64 etc.) tar from https://gstreamer.freedesktop.org/data/pkg/android/
 -Add GSTREAMER_ROOT_ANDROID variable and point it to the extracted tar root
--Inside a gstreamer-1.0-android-arm64-1.8.1/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h set:
+-Go to unzipped dir and found: ./lib/gstreamer-1.0/include/gst/gl/gstglconfig.h, set:
 #define GST_GL_HAVE_GLSYNC 1
 #define GST_GL_HAVE_GLUINT64 1
 #define GST_GL_HAVE_GLINT64 1
@@ -29,8 +29,16 @@ The project already copies the resulting GstUnityBridge.dll to the Unity\Assets\
 
 Then, the usual:
 
+WARN: android-ndk-r12 have a bug with undefined reference to 'bsd_signal', ndk-r13 will fix it.
+
+on android-ndk-r12:
+android update project -p . -s --target android-19
+in this case libgstreamer_android.so don't work on API level higher than 19 (e.g. android 6). Use libgstreamer_android.so compiled on higher API level with current libGstUnityBridge.so.
+
+on android-ndk-r13:
 android update project -p . -s --target android-23
-ndk-build
+
+ndk-build -k 
 
 At this point, two libraries are already available in the libs folder: libgstreamer_android.so and libGstUnityBridge.so
 Both must be copied to the Assets\Plugins\android_arm folder of your Unity project.
