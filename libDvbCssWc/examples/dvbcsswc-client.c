@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <gst/gst.h>
-#include <gst/net/gstdvbcsswcclient.h>
+#include <gstdvbcsswcclient.h>
 
 static gboolean
 handle_bus_message (GstBus * bus, GstMessage * message, GstClock * client_clock)

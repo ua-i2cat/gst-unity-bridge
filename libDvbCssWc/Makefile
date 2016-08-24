@@ -10,14 +10,12 @@ RELEASEFLAGS = -O2 -D NDEBUG -fwhole-program
 
 TARGET  = libDvbCssWc.so
 SOURCES = $(shell echo src/*.c)
-EXAMPLES = $(shell echo examples/*.c)
-HEADERS = $(shell echo include/*.h)
 OBJECTS = $(SOURCES:.c=.o)
 
 PREFIX = $(DESTDIR)/usr/local
 BINDIR = $(PREFIX)/bin
 
-all: $(TARGET)
+all: $(TARGET) examples_client examples_server
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(FLAGS) $(CFLAGS) $(RELEASEFLAGS) -o $(TARGET) $(LDFLAGS) $(OBJECTS) $(LIBS)
@@ -25,6 +23,9 @@ $(TARGET): $(OBJECTS)
 clean:
 	@rm -rf src/*.o $(TARGET)
 
-examples:
-	$(CC) $(FLAGS) $(CFLAGS) $(DEBUGFLAGS) -o server $(TARGET) $(LIBS)
+examples_client:
+	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_client examples/dvbcsswc-client.c $(LIBS) -l:$(TARGET)
+
+examples_server:
+	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_server examples/dvbcsswc-server.c $(LIBS) -l:$(TARGET)
 
