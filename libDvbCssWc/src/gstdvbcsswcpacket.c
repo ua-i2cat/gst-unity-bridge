@@ -312,6 +312,10 @@ gdouble gst_dvb_css_wc_packet_decode_max_freq_error(guint32 max_freq_error)
 
 void gst_dvb_css_wc_packet_print(const GstDvbCssWcPacket * packet)
 {
+    if(packet == NULL){
+	return;
+    }
+
     g_print("Packet:\n\n");
     g_print("version: %u\n", packet->version);
     g_print("message_type: %u\n", packet->message_type);
