@@ -264,7 +264,7 @@ beach:
     return ret;
 }
 
-EXPORT_API void gub_pipeline_setup_decoding2(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
+EXPORT_API void gub_pipeline_setup_decoding_clock(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
     const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
     float crop_left, float crop_top, float crop_right, float crop_bottom, gboolean isDvbWc)
 {
@@ -374,7 +374,7 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
 	const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
 	float crop_left, float crop_top, float crop_right, float crop_bottom)
 {
-	gub_pipeline_setup_decoding2(pipeline, uri, video_index, audio_index, net_clock_addr, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom, FALSE);
+	gub_pipeline_setup_decoding_clock(pipeline, uri, video_index, audio_index, net_clock_addr, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom, FALSE);
 }
 
 EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int *height)
