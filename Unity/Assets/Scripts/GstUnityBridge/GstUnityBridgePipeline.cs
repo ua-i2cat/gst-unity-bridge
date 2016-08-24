@@ -65,6 +65,17 @@ public class GstUnityBridgePipeline
         float crop_left, float crop_top, float crop_right, float crop_bottom);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_setup_decoding_clock(System.IntPtr p,
+        [MarshalAs(UnmanagedType.LPStr)]string uri,
+        int video_index,
+        int audio_index,
+        [MarshalAs(UnmanagedType.LPStr)]string net_clock_address,
+        int net_clock_port,
+        ulong basetime,
+        float crop_left, float crop_top, float crop_right, float crop_bottom,
+        bool isDvbWc);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private int gub_pipeline_grab_frame(System.IntPtr p, ref int w, ref int h);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -171,12 +182,19 @@ public class GstUnityBridgePipeline
             userdata);
     }
 
-    internal void SetupDecoding(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, ulong basetime, float crop_left, float crop_top, float crop_right, float crop_bottom)
+    internal void SetupDecoding(string uri, int video_index, int audio_index, string net_clock_address, int net_clock_port, ulong basetime, float crop_left, float crop_top, float crop_right, float crop_bottom, bool isDvbWc = false)
     {
-        gub_pipeline_setup_decoding(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom);
+        if (isDvbWc)
+        {
+            gub_pipeline_setup_decoding_clock(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom, isDvbWc);
+        }
+        else
+        {
+            gub_pipeline_setup_decoding(m_Instance, uri, video_index, audio_index, net_clock_address, net_clock_port, basetime, crop_left, crop_top, crop_right, crop_bottom);
+        }
     }
 
-    internal bool GrabFrame(out Vector2 frameSize)
+    internal bool GrabFrame(ref Vector2 frameSize)
     {
         int w = 0, h = 0;
         if (gub_pipeline_grab_frame(m_Instance, ref w, ref h) == 1)
@@ -185,7 +203,6 @@ public class GstUnityBridgePipeline
             frameSize.y = h;
             return true;
         }
-        frameSize.x = frameSize.y = 0;
         return false;
     }
 

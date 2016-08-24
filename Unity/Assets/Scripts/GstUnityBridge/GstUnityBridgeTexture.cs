@@ -49,6 +49,8 @@ public class GstUnityBridgeSynchronizationParams
     public string m_MasterClockAddress = "";
     [Tooltip("Port of the GStreamer network clock provider")]
     public int m_MasterClockPort = 0;
+    [Tooltip("Activate the Dvb Wallclock system, instead of GStreamers default")]
+    public bool m_isDvbWC = false;
 #if !EXPERIMENTAL
     [HideInInspector]
 #endif
@@ -154,7 +156,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public GstUnityBridgeSynchronizationParams m_NetworkSynchronization = new GstUnityBridgeSynchronizationParams();
     public GstUnityBridgeDebugParams m_DebugOutput = new GstUnityBridgeDebugParams();
 
-    private GstUnityBridgePipeline m_Pipeline;
+    private GstUnityBridgePipeline m_Pipeline = null;
     private Texture2D m_Texture = null;
     private int m_Width = 64;
     private int m_Height = 64;
@@ -275,10 +277,18 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         if (m_InitializeOnStart && !m_HasBeenInitialized)
         {
-            Initialize();
-            Setup(m_URI, m_VideoIndex, m_AudioIndex);
-            Play();
+            InitializeSetupPlay();
         }
+    }
+
+   public void InitializeSetupPlay()
+    {
+
+        Initialize();
+        Setup(m_URI, m_VideoIndex, m_AudioIndex);
+        Play();
+
+
     }
 
     public void Resize(int _Width, int _Height)
@@ -309,7 +319,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
             m_NetworkSynchronization.m_MasterClockPort,
             m_NetworkSynchronization.m_BaseTime,
-            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
+            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom,
+            m_NetworkSynchronization.m_isDvbWC);
     }
 
     public void Destroy()
@@ -337,7 +348,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     public void Stop()
     {
-        m_Pipeline.Stop();
+        if(m_Pipeline != null)
+            m_Pipeline.Stop();
     }
 
     public void Close()
@@ -394,24 +406,31 @@ public class GstUnityBridgeTexture : MonoBehaviour
         if (m_Pipeline == null)
             return;
 
-        Vector2 sz;
-        if (m_Pipeline.GrabFrame(out sz))
+        Vector2 sz = Vector2.zero;
+        if (m_Pipeline.GrabFrame(ref sz))
         {
             Resize((int)sz.x, (int)sz.y);
             if (m_Texture == null)
+            {
                 Debug.LogWarning(string.Format("[{0}] The GUBTexture does not have a texture assigned and will not paint.", name + GetInstanceID()));
+            }
             else
+            {
                 m_Pipeline.BlitTexture(m_Texture.GetNativeTexturePtr(), m_Texture.width, m_Texture.height);
+            }
+
             if (m_FirstFrame)
             {
                 if (m_AdaptiveBitrateLimit != 1.0F)
                 {
                     SetAdaptiveBitrateLimit(m_AdaptiveBitrateLimit);
                 }
+
                 if (m_Events.m_OnStart != null)
                 {
                     m_Events.m_OnStart.Invoke();
                 }
+
                 m_FirstFrame = false;
             }
         }

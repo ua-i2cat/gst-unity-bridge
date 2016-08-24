@@ -27,4 +27,4 @@ This works both natively on Windows or as cross-compile from Linux.
 Building with Visual Studio
 ---------------------------
 
-Building with Visual Studio is currently not supported.
+Building with Visual Studio is currently supported.
