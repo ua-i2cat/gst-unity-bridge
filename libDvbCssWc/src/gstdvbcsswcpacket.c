@@ -316,14 +316,14 @@ void gst_dvb_css_wc_packet_print(const GstDvbCssWcPacket * packet)
 	return;
     }
 
-    g_print("Packet:\n\n");
-    g_print("version: %u\n", packet->version);
-    g_print("message_type: %u\n", packet->message_type);
-    g_print("precision: %i\n", packet->precision);
-    g_print("reserved: %u\n", packet->reserved);
-    g_print("max_freq_error: %u\n", packet->max_freq_error);
-    g_print("originate_timevalue_secs: %u\n", packet->originate_timevalue_secs);
-    g_print("originate_timevalue_nanos: %u\n", packet->originate_timevalue_nanos);
-    g_print("receive_timevalue: %" G_GUINT64_FORMAT "\n", packet->receive_timevalue);
-    g_print("transmit_timevalue: %" G_GUINT64_FORMAT "\n\n", packet->transmit_timevalue);
+    GST_DEBUG("Packet:\n\n");
+    GST_DEBUG("version: %u\n", packet->version);
+    GST_DEBUG("message_type: %u\n", packet->message_type);
+    GST_DEBUG("precision: %i\n", packet->precision);
+    GST_DEBUG("reserved: %u\n", packet->reserved);
+    GST_DEBUG("max_freq_error: %u\n", packet->max_freq_error);
+    GST_DEBUG("originate_timevalue_secs: %u\n", packet->originate_timevalue_secs);
+    GST_DEBUG("originate_timevalue_nanos: %u\n", packet->originate_timevalue_nanos);
+    GST_DEBUG("receive_timevalue: %" G_GUINT64_FORMAT "\n", packet->receive_timevalue);
+    GST_DEBUG("transmit_timevalue: %" G_GUINT64_FORMAT "\n\n", packet->transmit_timevalue);
 }
