@@ -24,8 +24,8 @@ clean:
 	@rm -rf src/*.o $(TARGET)
 
 examples_client:
-	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_client examples/dvbcsswc-client.c $(LIBS) -l:$(TARGET)
+	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_client examples/dvbcsswc-client.c $(LIBS) -l:$(TARGET) $(shell pkg-config --libs gstreamer-net-1.0)
 
 examples_server:
-	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_server examples/dvbcsswc-server.c $(LIBS) -l:$(TARGET)
+	$(CC) $(FLAGS) $(CFLAGS) -Isrc $(DEBUGFLAGS) -L. -o test_server examples/dvbcsswc-server.c $(LIBS) -l:$(TARGET) $(shell pkg-config --libs gstreamer-net-1.0)
 

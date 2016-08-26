@@ -535,7 +535,7 @@ gst_dvb_css_wc_client_clock_send_request(gpointer data)
     GstDvbCssWcClientClock *self = data;
     GstDvbCssWcPacket *req;
     GstClockTime time;
-    gboolean success = FALSE;
+    gboolean success;
     GError *err = NULL;
     
     req = gst_dvb_css_wc_packet_new (NULL);

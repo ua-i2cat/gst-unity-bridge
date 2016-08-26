@@ -39,7 +39,7 @@
  * Creates and starts DVC CSS WC clock
  *
  */
-extern EXPORT_API gboolean gst_dvb_css_wc_start(const gchar *address, gint port, gboolean followup, guint32 max_freq_error_ppm);
+extern EXPORT_API gboolean gst_dvb_css_wc_start(const gchar *address, gint port, gboolean followup, guint32 max_freq_error_ppm, gboolean isDebug);
 
 /**
  * gst_dvb_css_wc_stop:
