@@ -20,11 +20,12 @@
 
 #include <stdlib.h>
 #include "gstdvbcsswcserver.h"
+#include <gst/net/gstnet.h>
 #include "export.h"
 #include <time.h>
 
 typedef struct _Server {
-	GstDvbCssWcServer *gstdvbcsswcserver;
+	void *gstdvbcsswcserver;
 	GMainLoop *loop;
 	GstClock *clock;
 	GThread *thread;
@@ -43,29 +44,29 @@ extern EXPORT_API Server* server_new(void){
 	return s;
 }
 
-void server_free(Server* s) {
-	if(s->clock){
-		gst_object_unref(s->clock);
-		s->clock = NULL;
+void server_free(Server** s) {
+	if((*s)->loop){
+		gst_object_unref((*s)->loop);
+		(*s)->loop = NULL;
 	}
-	if(s->loop){
-		gst_object_unref(s->loop);
-		s->loop = NULL;
+	if((*s)->thread){
+		gst_object_unref((*s)->thread);
+		(*s)->thread = NULL;
 	}
-	if(s->thread){
-		gst_object_unref(s->thread);
-		s->thread = NULL;
+	if((*s)->clock){
+		gst_object_unref((*s)->clock);
+		(*s)->clock = NULL;
 	}
-	if(s->gstdvbcsswcserver){
-		gst_object_unref(s->gstdvbcsswcserver);
-		s->gstdvbcsswcserver = NULL;
+	if((*s)->gstdvbcsswcserver){
+		gst_object_unref((*s)->gstdvbcsswcserver);
+		(*s)->gstdvbcsswcserver = NULL;
 	}
 
-	free(s);
-	s = NULL;
+	free(*s);
+	*s = NULL;
 }
 
-extern EXPORT_API gboolean gst_dvb_css_wc_start(const gchar *address, gint port, gboolean followup, guint32 max_freq_error_ppm) {
+extern EXPORT_API gboolean gst_dvb_css_wc_start(const gchar *address, gint port, gboolean followup, guint32 max_freq_error_ppm,  gboolean isDebug) {
 	g_print("dvb_css_wc_start\n");
 	G_LOCK(mutex);
 	sServer = server_new();
@@ -75,7 +76,14 @@ extern EXPORT_API gboolean gst_dvb_css_wc_start(const gchar *address, gint port,
 	gst_init(NULL, NULL);
 	sServer->loop = g_main_loop_new(NULL, FALSE);
 	sServer->clock = gst_system_clock_obtain();
-	sServer->gstdvbcsswcserver = gst_dvb_css_wc_server_new(sServer->clock, address, port, followup, max_freq_error_ppm);
+
+	if(isDebug == FALSE){
+		sServer->gstdvbcsswcserver = gst_dvb_css_wc_server_new(sServer->clock, address, port, followup, max_freq_error_ppm);		
+	}
+	else{
+		sServer->gstdvbcsswcserver = gst_net_time_provider_new(sServer->clock, address, port);		
+	}
+	
 	if (sServer->gstdvbcsswcserver == NULL) {
 		g_print("gstdvbcsswcserver not created\n");
 		goto cleanup;
@@ -101,7 +109,7 @@ server_struct_not_initialized:{
 	return FALSE;
 	}
 cleanup:{
-	server_free(sServer);
+	server_free(&sServer);
 	G_UNLOCK(mutex);
 	return FALSE;
 	}
@@ -119,7 +127,7 @@ extern EXPORT_API void gst_dvb_css_wc_stop(void) {
 		g_main_loop_quit(sServer->loop);
 		g_thread_join(sServer->thread);
 	}
-	server_free(sServer);
+	server_free(&sServer);
 	g_print("Server stopped\n");
 	G_UNLOCK(mutex);
 }
