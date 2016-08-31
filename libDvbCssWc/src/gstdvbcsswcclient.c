@@ -632,6 +632,8 @@ gst_dvb_css_wc_client_clock_thread (gpointer data)
             }
         }               
     }
+	// here sleep
+	g_usleep(G_USEC_PER_SEC / 2);
   }
   GST_INFO_OBJECT (self, "shutting down dvb client clock thread");
   return NULL;  
