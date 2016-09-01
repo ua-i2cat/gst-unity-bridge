@@ -287,8 +287,11 @@ public class GstUnityBridgeTexture : MonoBehaviour
         Initialize();
         Setup(m_URI, m_VideoIndex, m_AudioIndex);
         Play();
-
-
+    }
+	
+	public bool HasBeenInitialized()
+    {
+        return m_HasBeenInitialized;
     }
 
     public void Resize(int _Width, int _Height)
