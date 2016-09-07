@@ -173,6 +173,11 @@ EXPORT_API void gub_pipeline_set_position(GUBPipeline *pipeline, double position
         (gint64)(position * GST_SECOND));
 }
 
+EXPORT_API void gub_pipeline_set_basetime(GUBPipeline *pipeline, guint64 basetime)
+{
+    gst_element_set_base_time(pipeline->pipeline, (GstClockTime)basetime);
+}
+
 static gboolean select_stream(GstBin *rtspsrc, guint num, GstCaps *caps, GUBPipeline *pipeline)
 {
     gboolean select = (num == pipeline->video_index || num == pipeline->audio_index);
