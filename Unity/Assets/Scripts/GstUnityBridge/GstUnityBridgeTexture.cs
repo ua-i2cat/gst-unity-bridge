@@ -381,6 +381,12 @@ public class GstUnityBridgeTexture : MonoBehaviour
         set { if (m_Pipeline != null) m_Pipeline.Position = value; }
     }
 
+    public ulong Basetime
+    {
+        get { return m_Pipeline != null ? m_NetworkSynchronization.m_BaseTime : 0; }
+        set { if (m_Pipeline != null) m_Pipeline.Basetime = m_NetworkSynchronization.m_BaseTime = value; }
+    }
+
     public bool IsPlaying
     {
         get { return m_Pipeline != null ? m_Pipeline.IsPlaying : false; }

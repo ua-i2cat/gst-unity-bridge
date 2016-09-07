@@ -103,6 +103,9 @@ public class GstUnityBridgePipeline
     extern static private void gub_pipeline_set_position(System.IntPtr p, double position);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    extern static private void gub_pipeline_set_basetime(System.IntPtr p, ulong basetime);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_setup_encoding(System.IntPtr p,
         [MarshalAs(UnmanagedType.LPStr)]string filename,
         int width, int height);
@@ -171,6 +174,11 @@ public class GstUnityBridgePipeline
     {
         get { return gub_pipeline_get_position(m_Instance); }
         set { gub_pipeline_set_position(m_Instance, value); }
+    }
+
+    internal ulong Basetime
+    {
+        set { gub_pipeline_set_basetime(m_Instance, value); }
     }
 
     internal GstUnityBridgePipeline(string name, GUBPipelineOnEosPFN eos_pfn, GUBPipelineOnErrorPFN error_pfn, GUBPipelineOnQosPFN qos_pfn, System.IntPtr userdata)
