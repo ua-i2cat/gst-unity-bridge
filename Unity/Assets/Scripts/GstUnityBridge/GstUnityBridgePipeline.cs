@@ -103,7 +103,7 @@ public class GstUnityBridgePipeline
     extern static private void gub_pipeline_set_position(System.IntPtr p, double position);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    extern static private void gub_pipeline_set_basetime(System.IntPtr p, guint64 basetime);
+    extern static private void gub_pipeline_set_basetime(System.IntPtr p, ulong basetime);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     extern static private void gub_pipeline_setup_encoding(System.IntPtr p,
