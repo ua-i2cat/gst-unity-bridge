@@ -18,27 +18,18 @@
 *  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
 */
 
-#include <gst/gst.h>
 #include <gst/video/video.h>
 #include <gst/net/gstnet.h>
-#include <gst/app/gstappsrc.h>
 #include <gst/pbutils/encoding-profile.h>
 #include <gstdvbcsswcclient.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "gub.h"
+#include "gub_pipeline.h"
 
 #define MAX_JITTERBUFFER_DELAY_MS 40
 #define MAX_PIPELINE_DELAY_MS 500
-
-typedef struct _GUBPipeline GUBPipeline;
-
-typedef void(*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
-typedef void(*GUBPipelineOnErrorPFN)(GUBPipeline *userdata, char *message);
-typedef void(*GUBPipelineOnQosPFN)(GUBPipeline *userdata,
-    gint64 current_jitter, guint64 current_running_time, guint64 current_stream_time, guint64 current_timestamp,
-    gdouble proportion, guint64 processed, guint64 dropped);
 
 struct _GUBPipeline {
     char *name;

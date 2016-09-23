@@ -18,11 +18,9 @@
 *  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
 */
 
-#include "gub.h"
+#include "gub_log.h"
 #include <stdio.h>
 #include <stdarg.h>
-
-typedef void(*GUBUnityDebugLogPFN)(gint32 level, const char *message);
 
 GUBUnityDebugLogPFN gub_unity_debug_log = NULL;
 
