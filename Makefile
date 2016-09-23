@@ -4,7 +4,7 @@ CXX   = g++
 CXXFLAGS = -std=c++14
 FLAGS        = # -std=gnu99 -Iinclude
 
-CFLAGS       = -fPIC -g  `pkg-config gstreamer-1.0 --cflags` `pkg-config opencv --cflags` -I/usr/local/lib/gstreamer-1.0/include -I/usr/local/include/gstreamer-1.0 -I./libDvbCssWc/src -I./Plugin/src#-pedantic -Wall -Wextra -ggdb3 
+CFLAGS       = -fPIC -g  `pkg-config gstreamer-1.0 --cflags` -I/usr/local/lib/gstreamer-1.0/include -I/usr/local/include/gstreamer-1.0 -I./libDvbCssWc/src -I./Plugin/src#-pedantic -Wall -Wextra -ggdb3 
 LDFLAGS      = -shared
 LIBS         = $(shell pkg-config --libs glib-2.0) $(shell pkg-config --libs gio-2.0) $(shell pkg-config --libs gstreamer-1.0) -lm 
 DEBUGFLAGS   = -O0 -D _DEBUG
