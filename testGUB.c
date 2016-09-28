@@ -11,7 +11,7 @@ extern "C"
 #include <SDL2/SDL.h>
 #include <GL/glut.h>
 #include <SDL2/SDL_video.h>
-#include <SDL/SDL.h>
+
 
 void log(gint32 level, const char *message)
 {
