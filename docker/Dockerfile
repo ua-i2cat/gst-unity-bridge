@@ -3,7 +3,7 @@ MAINTAINER Wojciech Kapsa kapsa@man.poznan.pl
 
 #A docker with ubuntu:16.04 for Android GUB
 
-RUN apt-get update && apt-get -y install git build-essential pkg-config wget unzip default-jre
+RUN apt-get update && apt-get -y install git build-essential pkg-config wget unzip default-jre openjdk-8-jdk
 #GUB Ubuntu dependencies
 #RUN apt-get -y install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev libgl1-mesa-dev libgles2-mesa-dev
 
@@ -35,16 +35,23 @@ ENV ANDROID_NDK_HOME /usr/local/android-ndk-r12b
 ENV PATH $PATH:$ANDROID_NDK_HOME
 ENV GSTREAMER_ROOT_ANDROID /usr/local/gstreamer/arm
 
-ENV ANT_HOME $ANDROID_SDK_HOME/tools
-ENV PATH $PATH:$ANT_HOME
+
 
 RUN ( sleep 4 && while [ 1 ]; do sleep 1; echo y; done ) | android update sdk --no-ui --force -a --filter 1,2,3,android-19 && \
 cp -r android-sdk-linux/tools /usr/local/android-sdk-linux/ &&\
 rm -rf android-sdk-linux
 
+ENV ANT_VERSION 1.9.4 
+RUN wget http://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz 
+RUN tar xzf apache-ant-${ANT_VERSION}-bin.tar.gz 
+RUN mv apache-ant-${ANT_VERSION} /opt/ant 
+RUN rm apache-ant-${ANT_VERSION}-bin.tar.gz 
+
+ENV ANT_HOME /opt/ant 
+ENV PATH ${PATH}:/opt/ant/bin
 
 #build the GUB and cp artifacts
-CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target android-19 && ndk-build -k || true && cp -r libs/armeabi /mnt/gub && cp -r libs/armeabi-v7a /mnt/gub
+CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target android-19 && ndk-build -k || true && cp -r libs/armeabi /mnt/gub && cp -r libs/armeabi-v7a /mnt/gub && cd /home/gst-unity-bridge/Plugin && ant release && cd bin/classes && jar cvf gub.jar org/* && cp gub.jar /mnt/gub
 
 
 #RUN cd /home/gst-unity-bridge/Plugin && ant release && cd bin/classes && jar cvf gub.jar org/*
