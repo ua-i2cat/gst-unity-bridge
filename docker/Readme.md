@@ -24,7 +24,7 @@ To remove all images and containers:
 
 ```
 docker rm `docker ps --no-trunc -aq`
-docker rmi $(docker images -q)
+docker rmi gub/android
 ```
 
 ### Prerequisities

@@ -27,7 +27,7 @@ rm apache-ant-${ANT_VERSION}-bin.tar.gz
 ENV ANT_HOME /opt/ant 
 ENV PATH ${PATH}:/opt/ant/bin
 
-ENV NDK_TARGET_LEVEL android-19
+ENV NDK_TARGET_LEVEL android-23
 #Install android SDK
 RUN wget  https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz && \
 tar -xzf android-sdk_r24.4.1-linux.tgz -C /usr/local && \
@@ -36,7 +36,7 @@ cd /usr/local/android-sdk-linux/tools && ( sleep 4 && while [ 1 ]; do sleep 1; e
 ENV ANDROID_SDK_HOME /usr/local/android-sdk-linux
 ENV PATH $PATH:$ANDROID_SDK_HOME/tools
 
-ENV GST_ANDROID_ARCH arm
+ENV GST_ANDROID_ARCH armv7
 ENV GST_ANDROID_VERISON 1.8.2
 #get gstreamer for android
 RUN wget  https://gstreamer.freedesktop.org/data/pkg/android/${GST_ANDROID_VERISON}/gstreamer-1.0-android-${GST_ANDROID_ARCH}-${GST_ANDROID_VERISON}.tar.bz2 && \
@@ -45,9 +45,13 @@ tar -xjf gstreamer-1.0-android-${GST_ANDROID_ARCH}-${GST_ANDROID_VERISON}.tar.bz
 rm gstreamer-1.0-android-${GST_ANDROID_ARCH}-${GST_ANDROID_VERISON}.tar.bz2
 ENV GSTREAMER_ROOT_ANDROID /usr/local/gstreamer/${GST_ANDROID_ARCH}
 
-ENV NDK_APP_ABI armeabi
+RUN sed -i -e 's/#define GST_GL_HAVE_GLSYNC 0/#define GST_GL_HAVE_GLSYNC 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h && \
+sed -i -e 's/#define GST_GL_HAVE_GLUINT64 0/#define GST_GL_HAVE_GLUINT64 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h && \
+sed -i -e 's/#define GST_GL_HAVE_GLINT64 0/#define GST_GL_HAVE_GLINT64 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h
+
+ENV NDK_APP_ABI armeabi-v7a
 ENV ARTIFACTS_PATH /mnt/gub
 #build the GUB and cp artifacts
-CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target ${NDK_TARGET_LEVEL} && ndk-build APP_ABI=${NDK_APP_ABI} && cp -r libs/${NDK_APP_ABI} ${ARTIFACTS_PATH} && ant release && cd bin/classes && jar cvf gub.jar org/* && cp gub.jar ${ARTIFACTS_PATH}
+#CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target ${NDK_TARGET_LEVEL} && ndk-build APP_ABI=${NDK_APP_ABI} && cp -r libs/${NDK_APP_ABI} ${ARTIFACTS_PATH} && ant release && cd bin/classes && jar cvf gub.jar org/* && cp gub.jar ${ARTIFACTS_PATH}
 
 
