@@ -52,6 +52,6 @@ sed -i -e 's/#define GST_GL_HAVE_GLINT64 0/#define GST_GL_HAVE_GLINT64 1/g' $GST
 ENV NDK_APP_ABI armeabi-v7a
 ENV ARTIFACTS_PATH /mnt/gub
 #build the GUB and cp artifacts
-#CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target ${NDK_TARGET_LEVEL} && ndk-build APP_ABI=${NDK_APP_ABI} && cp -r libs/${NDK_APP_ABI} ${ARTIFACTS_PATH} && ant release && cd bin/classes && jar cvf gub.jar org/* && cp gub.jar ${ARTIFACTS_PATH}
+CMD cd /home/ && git clone https://github.com/kapsa/gst-unity-bridge.git --branch feature/dvb && cd /home/gst-unity-bridge/Plugin && android update project -p . -s --target ${NDK_TARGET_LEVEL} && ndk-build APP_ABI=${NDK_APP_ABI} && cp -r libs/${NDK_APP_ABI} ${ARTIFACTS_PATH} && ant release && cd bin/classes && jar cvf gub.jar org/* && cp gub.jar ${ARTIFACTS_PATH}
 
 
