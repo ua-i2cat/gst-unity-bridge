@@ -17,10 +17,7 @@
 *
 *  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
 */
-
-#include <gst/gst.h>
-#include <stdio.h>
-#include "gub.h"
+#include "gub_gstreamer.h"
 
 static GstClockTime _priv_gst_info_start_time;
 
