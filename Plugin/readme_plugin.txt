@@ -18,6 +18,21 @@ First off, some patches for GStreamer are needed ($GST_PREFIX is the folder wher
 
 Then, the usual:
 
+Download the android SDK 23, and tools 4.9
+Latest archictecture for Gstreamer is fine, copy the gstglconfig.h from the libs directory into the gst/gl directory. This is probably an environment issue on my setup but it helps..
+Set the -fuse-ld=gold to -fuse-ld=gold.exe as clang version 3.8 and newer need the EXE at the end
+
+//Add the architecture to the Android.mk file - TARGET_ARCH_ABI := armeabi-v7a
+//create an Application.mk under jini with the following lines:
+//APP_ABI := armeabi-v7a # ideally, this should be set to "all"
+//APP_PLATFORM := android-23 # should the same as -platform and your minSdkVersion.
+Set all three of these to 1
+#define GST_GL_HAVE_GLSYNC 1
+#define GST_GL_HAVE_GLUINT64 1
+#define GST_GL_HAVE_GLINT64 1
+
+Make sure that the NDK paths are setup correctly as environment paths in windows.
+
 android update project -p . -s --target android-23
 ndk-build
 
@@ -25,6 +40,10 @@ At this point, two libraries are already available in the libs folder: libgstrea
 Both must be copied to the Assets\Plugins\android_arm folder of your Unity project.
 
 The first time, you will need to compile the Java part. The easiest way is probably to build the whole project and then generate the JAR file with the needed classes:
+
+install apache-ant (that is actually the java helper by apache)
+set the apache-ant path (you could do this in the windows environment variables but I just did this because I'm lazy) - doskey ant=C:\Programming\apache-ant-1.10.0\bin\ant.bat $* 
+
 
 ant release
 cd bin/classes

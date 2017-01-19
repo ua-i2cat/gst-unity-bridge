@@ -126,8 +126,12 @@ public class GstUnityBridgeTexture : MonoBehaviour
     public bool m_FlipY = false;
     [Tooltip("Play media from the beginning when it reaches the end")]
     public bool m_Loop = false;
+    [Tooltip("Checked = Use a udpsrc, Unchecked = Use URI")]
+    public bool m_useudpsrc = false;
     [Tooltip("URI to get the stream from")]
     public string m_URI = "";
+    [Tooltip("Port Number if UdpSrc is used")]
+    public int m_udpPort = 5000;
     [Tooltip("Zero-based index of the video stream to use (-1 disables video)")]
     public int m_VideoIndex = 0;
     [Tooltip("Zero-based index of the audio stream to use (-1 disables audio)")]
@@ -244,7 +248,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
         m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, OnQos, (IntPtr)m_instanceHandle);
 
         Resize(m_Width, m_Height);
-
+        
         Material mat = m_TargetMaterial;
         if (mat == null && GetComponent<Renderer>())
         {
@@ -309,7 +313,8 @@ public class GstUnityBridgeTexture : MonoBehaviour
             m_NetworkSynchronization.m_Enabled ? m_NetworkSynchronization.m_MasterClockAddress : null,
             m_NetworkSynchronization.m_MasterClockPort,
             m_NetworkSynchronization.m_BaseTime,
-            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom);
+            m_VideoCropping.m_Left, m_VideoCropping.m_Top, m_VideoCropping.m_Right, m_VideoCropping.m_Bottom,
+            Convert.ToInt32(m_useudpsrc), m_udpPort);
     }
 
     public void Destroy()

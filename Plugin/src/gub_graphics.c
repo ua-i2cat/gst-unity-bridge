@@ -608,7 +608,7 @@ static GstContext *gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontex
 
     gub_log("Providing context. gub_context=%p, type=%s", gcontext, type);
 
-    if (!gcontext) return;
+    if (!gcontext) return NULL;
 
     if (type != NULL) {
         if (g_strcmp0(type, GST_GL_DISPLAY_CONTEXT_TYPE) == 0) {
@@ -657,7 +657,9 @@ static void gub_destroy_graphic_context_egl(GUBGraphicContextEGL *gcontext)
 
 static const gchar *gub_get_video_branch_description_egl()
 {
-    return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D ! fakesink sync=1 qos=1 name=sink";
+	return "glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),texture-target=2D ! fakesink sync=1 qos=1 name=sink";
+    //return "glupload ! video/x-raw(memory:GLMemory),texture-target=2D ! fakesink sync=1 qos=1 name=sink";
+	//return "glupload ! video/x-raw,format=RGB ! fakesink sync=1 qos=1 name=sink";
 }
 
 GUBGraphicBackend gub_graphic_backend_egl = {
