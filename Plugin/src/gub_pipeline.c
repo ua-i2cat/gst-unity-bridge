@@ -29,7 +29,7 @@
 #include "gub.h"
 
 #define MAX_JITTERBUFFER_DELAY_MS 40
-#define MAX_PIPELINE_DELAY_MS 500
+#define MAX_PIPELINE_DELAY_MS 100
 
 typedef struct _GUBPipeline GUBPipeline;
 
@@ -262,37 +262,77 @@ static GstPadProbeReturn pad_probe(GstPad *pad, GstPadProbeInfo *info, gpointer 
 beach:
     return ret;
 }
-
+//leave use udpsrc and or udpport as 0 if they're not required - i.e. using a URI
 EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
     const gchar *net_clock_addr, int net_clock_port, guint64 basetime,
-    float crop_left, float crop_top, float crop_right, float crop_bottom)
+    float crop_left, float crop_top, float crop_right, float crop_bottom, int useudpsrc, gint udpport)
 {
     GError *err = NULL;
     GstElement *vsink;
-    gchar *full_pipeline_description = NULL;
+	gchar *full_pipeline_description = NULL;
     GstBus *bus = NULL;
+
+	//The following variables are used for the webcamera interface setup
+	GstElement *source, *signalsource, *filter, *depayer, *decoder	;
+	GstCaps *raw_caps;
+	gchar *raw_caps_description = NULL;
 
     if (pipeline->pipeline) {
         gub_pipeline_close(pipeline);
     }
 
-    full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
-    gub_log_pipeline(pipeline, "Using pipeline: %s", full_pipeline_description);
+	if (useudpsrc == 0) {
+		full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
+		gub_log_pipeline(pipeline, "Using pipeline: %s", full_pipeline_description);
 
-    pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
-    g_free(full_pipeline_description);
-    if (err) {
-        gub_log_pipeline(pipeline, "Failed to create pipeline: %s", err->message);
-        return;
-    }
+		pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
+		g_free(full_pipeline_description);
+		if (err) {
+			gub_log_pipeline(pipeline, "Failed to create pipeline: %s", err->message);
+			return;
+		}
 
-    vsink = gst_parse_bin_from_description(gub_get_video_branch_description(), TRUE, NULL);
-    gub_log_pipeline(pipeline, "Using video sink: %s", gub_get_video_branch_description());
-    g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
-    g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
+		vsink = gst_parse_bin_from_description(gub_get_video_branch_description(), TRUE, NULL);
+		gub_log_pipeline(pipeline, "Using video sink: %s", gub_get_video_branch_description());
+		g_object_set(pipeline->pipeline, "video-sink", vsink, NULL);
+		g_object_set(pipeline->pipeline, "flags", 0x0003, NULL);
+	} else {
 
+		//setup the source element
+		source = gst_element_factory_make("udpsrc", "sourcename");
+		g_object_set(source, "port", udpport, NULL);
+		
+		gub_log_pipeline(pipeline, "Using udpsrc: %s", raw_caps_description);
+
+		//setup the caps filter
+		filter = gst_element_factory_make("capsfilter", "filtername");
+		raw_caps_description = g_strdup_printf("application/x-rtp");
+
+		raw_caps = gst_caps_from_string(raw_caps_description);
+		g_object_set(filter, "caps", raw_caps, NULL);
+		gub_log_pipeline(pipeline, "Using video caps: %s", raw_caps_description);
+		//free memory
+		g_free(raw_caps_description);
+		//setup the rest of the connections
+		depayer = gst_element_factory_make("rtph264depay", "depayername");
+		decoder = gst_element_factory_make("avdec_h264", "decodername");
+		
+
+		//setup the pipline
+		pipeline->pipeline = gst_pipeline_new("RCVR Pipeline");
+
+		// grab the output pipeline (D3d/OpenGL etc)
+		vsink = gst_parse_bin_from_description(gub_get_video_branch_description(), TRUE, NULL);
+		gub_log_pipeline(pipeline, "Using video sink: %s", gub_get_video_branch_description());
+
+		//add the elements and link them
+		gst_bin_add_many(GST_BIN(pipeline->pipeline), source, filter, depayer, decoder, vsink, NULL);
+		gst_element_link_many(source, filter, depayer, decoder, vsink, NULL);
+	}
+
+    
     bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline->pipeline));
-    gst_bus_add_signal_watch(bus);
+    gst_bus_add_signal_watch(bus);	
     gst_object_unref(bus);
     g_signal_connect(bus, "message", G_CALLBACK(message_received), pipeline);
 
@@ -329,8 +369,11 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
         pipeline->video_crop_right = crop_right;
         pipeline->video_crop_bottom = crop_bottom;
     }
-
-    g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), pipeline);
+	
+	//Added the original signal allocation for the pipeline pre-playbin useage
+	if (useudpsrc == 0) {
+		g_signal_connect(pipeline->pipeline, "source-setup", G_CALLBACK(source_created), pipeline);
+	} 
 
     if (net_clock_addr != NULL) {
         gint64 start, stop;
@@ -369,9 +412,9 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
     GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "sink");
     GstCaps *last_caps = NULL;
     GstVideoInfo info;
-
+	
     if (!pipeline->graphic_context) {
-        pipeline->graphic_context = gub_create_graphic_context(
+		pipeline->graphic_context = gub_create_graphic_context(
             GST_PIPELINE(pipeline->pipeline),
             pipeline->video_crop_left, pipeline->video_crop_top, pipeline->video_crop_right, pipeline->video_crop_bottom);
     }
@@ -483,7 +526,7 @@ EXPORT_API void gub_pipeline_setup_encoding(GUBPipeline *pipeline, const gchar *
     pipeline->video_width = width;
     pipeline->video_height = height;
 
-    raw_caps_description = g_strdup_printf("video/x-raw,format=RGBA,width=%d,height=%d", width, height);
+	raw_caps_description = g_strdup_printf("video/x-raw,format=RGBA,width=%d,height=%d", width, height);
     raw_caps = gst_caps_from_string(raw_caps_description);
     gub_log_pipeline(pipeline, "Using video caps: %s", raw_caps_description);
     g_free(raw_caps_description);
