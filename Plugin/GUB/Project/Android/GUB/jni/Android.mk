@@ -1,8 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 SRC_PATH = ../../../../Source
-DVB_WC_HEADERS_PATH = ../../../../../Utils/DvbCssWc/Source
-DVB_WC_SRC_PATH = ../../../../../../Utils/DvbCssWc/Source
+DVB_WC_HEADERS_PATH = ../../../../DvbCssWc/Source
+DVB_WC_SRC_PATH = ../../../../../DvbCssWc/Source
 
 LOCAL_MODULE    := GstUnityBridge
 LOCAL_C_INCLUDES := $(DVB_WC_HEADERS_PATH)

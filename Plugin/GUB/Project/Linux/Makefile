@@ -6,7 +6,7 @@ FLAGS        = # -std=gnu99 -Iinclude
 
 OUTDIR = ../../Build/Linux
 SRCDIR = ../../Source
-PLUGINDIR = ../../../../Utils/DvbCssWc
+PLUGINDIR = ../../../DvbCssWc
 
 CFLAGS       = -fPIC -g  `pkg-config gstreamer-1.0 --cflags` -I/usr/local/lib/gstreamer-1.0/include -I/usr/local/include/gstreamer-1.0 -I./$(PLUGINDIR)/Source -I./Plugin/src#-pedantic -Wall -Wextra -ggdb3 
 LDFLAGS      = -shared
