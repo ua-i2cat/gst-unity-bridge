@@ -18,27 +18,18 @@
 *  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
 */
 
-#include <gst/gst.h>
 #include <gst/video/video.h>
 #include <gst/net/gstnet.h>
-#include <gst/app/gstappsrc.h>
 #include <gst/pbutils/encoding-profile.h>
 #include <gstdvbcsswcclient.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "gub.h"
+#include "gub_pipeline.h"
 
 #define MAX_JITTERBUFFER_DELAY_MS 40
 #define MAX_PIPELINE_DELAY_MS 500
-
-typedef struct _GUBPipeline GUBPipeline;
-
-typedef void(*GUBPipelineOnEosPFN)(GUBPipeline *userdata);
-typedef void(*GUBPipelineOnErrorPFN)(GUBPipeline *userdata, char *message);
-typedef void(*GUBPipelineOnQosPFN)(GUBPipeline *userdata,
-    gint64 current_jitter, guint64 current_running_time, guint64 current_stream_time, guint64 current_timestamp,
-    gdouble proportion, guint64 processed, guint64 dropped);
 
 struct _GUBPipeline {
     char *name;
@@ -64,6 +55,8 @@ struct _GUBPipeline {
     void *userdata;
 
     GstAppSrc *appsrc;
+    GstClockTime basetime;
+    gboolean synced;
 };
 
 void gub_log_pipeline(GUBPipeline *pipeline, const char *format, ...)
@@ -198,46 +191,76 @@ static void source_created(GstBin *playbin, GstElement *source, GUBPipeline *pip
     g_signal_connect(source, "select-stream", G_CALLBACK(select_stream), pipeline);
 }
 
-static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipeline)
-{
-    switch (GST_MESSAGE_TYPE(message)) {
-    case GST_MESSAGE_ERROR:
-    {
-        GError *error = NULL;
-        gchar *debug = NULL;
-        gchar *full_msg = NULL;
+static void sync_video_position(GUBPipeline *pipeline) 
+{    
+    if (!pipeline->synced) {
+        gint64 position = GST_CLOCK_TIME_NONE;
+	gint64 current_time = gst_clock_get_time(pipeline->net_clock) + MAX_PIPELINE_DELAY_MS*GST_MSECOND;
+	if (current_time < pipeline->basetime) {
+	    gub_log_pipeline(pipeline, "ERROR: %lldns : %lldns", current_time, pipeline->basetime);
+	} else {
+	    gboolean seek = gst_element_seek_simple(pipeline->pipeline, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, current_time - pipeline->basetime);
+	    gub_log_pipeline(pipeline, "Seeked: %lldns : %d", current_time - pipeline->basetime, seek);	    
+	    while(position == GST_CLOCK_TIME_NONE){gst_element_query_position(pipeline->pipeline, GST_FORMAT_TIME, &position);}
+	    gub_log_pipeline(pipeline, "Setting basetime to %lldns + position %lldns", pipeline->basetime, position);
+	}
+	gst_element_set_base_time(pipeline->pipeline, pipeline->basetime+position); //pipeline->basetime+position);
 
-        gst_message_parse_error(message, &error, &debug);
-        full_msg = g_strdup_printf("[%s] %s (%s)", pipeline->name, error->message, debug);
-        gub_log_error(full_msg);
-        if (pipeline->on_error_handler != NULL) {
-            pipeline->on_error_handler(pipeline->userdata, error->message);
-        }
-        g_error_free(error);
-        g_free(debug);
-        g_free(full_msg);
-        break;
+	// Disable GstPipeline automatic handling of basetime
+	gst_element_set_start_time(pipeline->pipeline, GST_CLOCK_TIME_NONE);
+	pipeline->synced = TRUE;
     }
-    case GST_MESSAGE_EOS:
-        if (pipeline->on_eos_handler != NULL) {
-            pipeline->on_eos_handler(pipeline->userdata);
-        }
-        break;
-    case GST_MESSAGE_QOS:
-        if (pipeline->on_qos_handler != NULL) {
-            guint64 running_time;
-            guint64 stream_time;
-            guint64 timestamp;
-            gint64 jitter;
-            gdouble proportion;
-            guint64 processed;
-            guint64 dropped;
-            gst_message_parse_qos(message, NULL, &running_time, &stream_time, &timestamp, NULL);
-            gst_message_parse_qos_values(message, &jitter, &proportion, NULL);
-            gst_message_parse_qos_stats(message, NULL, &processed, &dropped);
-            pipeline->on_qos_handler(pipeline->userdata, jitter, running_time, stream_time, timestamp, proportion, processed, dropped);
-        }
-        break;
+}
+
+static void message_received(GstBus *bus, GstMessage *message, GUBPipeline *pipeline) {
+    switch (GST_MESSAGE_TYPE(message)) {
+	case GST_MESSAGE_ERROR:
+	{
+	    GError *error = NULL;
+	    gchar *debug = NULL;
+	    gchar *full_msg = NULL;
+
+	    gst_message_parse_error(message, &error, &debug);
+	    full_msg = g_strdup_printf("[%s] %s (%s)", pipeline->name, error->message, debug);
+	    gub_log_error(full_msg);
+	    if (pipeline->on_error_handler != NULL) {
+		pipeline->on_error_handler(pipeline->userdata, error->message);
+	    }
+	    g_error_free(error);
+	    g_free(debug);
+	    g_free(full_msg);
+	    break;
+	}
+	case GST_MESSAGE_EOS:
+	    if (pipeline->on_eos_handler != NULL) {
+		pipeline->on_eos_handler(pipeline->userdata);
+	    }
+	    break;
+	case GST_MESSAGE_QOS:
+	    if (pipeline->on_qos_handler != NULL) {
+		guint64 running_time;
+		guint64 stream_time;
+		guint64 timestamp;
+		gint64 jitter;
+		gdouble proportion;
+		guint64 processed;
+		guint64 dropped;
+		gst_message_parse_qos(message, NULL, &running_time, &stream_time, &timestamp, NULL);
+		gst_message_parse_qos_values(message, &jitter, &proportion, NULL);
+		gst_message_parse_qos_stats(message, NULL, &processed, &dropped);
+		pipeline->on_qos_handler(pipeline->userdata, jitter, running_time, stream_time, timestamp, proportion, processed, dropped);
+	    }
+	    break;
+	case GST_MESSAGE_STATE_CHANGED:
+	    if (GST_MESSAGE_SRC(message) == GST_OBJECT(pipeline->pipeline)) {
+		GstState old_state, new_state, pending_state;
+		gst_message_parse_state_changed(message, &old_state, &new_state, &pending_state);
+		g_print("\nPipeline state changed from %s to %s:\n", gst_element_state_get_name(old_state), gst_element_state_get_name(new_state));
+		if (new_state == GST_STATE_PAUSED) {
+		    sync_video_position(pipeline);
+		}
+	    }
+	    break;
     }
 }
 
@@ -282,7 +305,7 @@ EXPORT_API void gub_pipeline_setup_decoding_clock(GUBPipeline *pipeline, const g
         gub_pipeline_close(pipeline);
     }
 
-    full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
+    full_pipeline_description = g_strdup_printf("playbin3 uri=%s", uri);
     gub_log_pipeline(pipeline, "Using pipeline: %s", full_pipeline_description);
 
     pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
@@ -341,17 +364,22 @@ EXPORT_API void gub_pipeline_setup_decoding_clock(GUBPipeline *pipeline, const g
     if (net_clock_addr != NULL) {
         gint64 start, stop;
         gub_log_pipeline(pipeline, "Trying to synchronize to network clock at %s %d", net_clock_addr, net_clock_port);
-		if (isDvbWc == FALSE) {
-			pipeline->net_clock = gst_net_client_clock_new("net_clock", net_clock_addr, net_clock_port, 0);
-		}
-		else{
-			pipeline->net_clock = gst_dvb_css_wc_client_clock_new("dvb_clock", net_clock_addr, net_clock_port, 0);
-		}
+	    if (isDvbWc == FALSE) {
+		pipeline->net_clock = gst_net_client_clock_new("net_clock", net_clock_addr, net_clock_port, 0);
+	    }
+	    else{
+		pipeline->net_clock = gst_dvb_css_wc_client_clock_new("dvb_clock", net_clock_addr, net_clock_port, 0);
+	    }
         if (!pipeline->net_clock) {
             gub_log_pipeline(pipeline, "Could not create network clock at %s %d", net_clock_addr, net_clock_port);
             return;
         }
 
+	gint64 current_time = gst_clock_get_time(pipeline->net_clock);
+	gub_log_pipeline(pipeline, "CURRENT_TIME: %lldns", current_time);
+	current_time = gst_clock_get_internal_time(pipeline->net_clock);
+	gub_log_pipeline(pipeline, "INTERNAL_TIME: %lldns", current_time);
+	
         start = g_get_monotonic_time();
         gst_clock_wait_for_sync(pipeline->net_clock, 30 * GST_SECOND);
         stop = g_get_monotonic_time();
@@ -361,18 +389,18 @@ EXPORT_API void gub_pipeline_setup_decoding_clock(GUBPipeline *pipeline, const g
         else {
             gub_log_pipeline(pipeline, "Could not synchronize to network clock after %g seconds", (stop - start) / 1e6);
         }
+	
+	current_time = gst_clock_get_time(pipeline->net_clock);
+	gub_log_pipeline(pipeline, "CURRENT_TIME2: %lldns", current_time);
+	current_time = gst_clock_get_internal_time(pipeline->net_clock);
+	gub_log_pipeline(pipeline, "INTERNAL_TIME2: %lldns", current_time);
 
         gst_pipeline_use_clock(GST_PIPELINE(pipeline->pipeline), pipeline->net_clock);
         gst_pipeline_set_latency(GST_PIPELINE(pipeline->pipeline), MAX_PIPELINE_DELAY_MS * GST_MSECOND);
-
-        if (basetime != 0)
-        {
-            gst_element_set_base_time(pipeline->pipeline, (GstClockTime)basetime);
-            gub_log_pipeline(pipeline, "Setting basetime to %lldns", basetime);
-            // Disable GstPipeline automatic handling of basetime
-            gst_element_set_start_time(pipeline->pipeline, GST_CLOCK_TIME_NONE);
-        }
     }
+    
+    pipeline->basetime = basetime;
+    pipeline->synced = (basetime == 0);
 }
 
 EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *uri, int video_index, int audio_index,
@@ -384,6 +412,7 @@ EXPORT_API void gub_pipeline_setup_decoding(GUBPipeline *pipeline, const gchar *
 
 EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int *height)
 {
+    //GST_DEBUG_BIN_TO_DOT_FILE((GstBin*)pipeline->pipeline, GST_DEBUG_GRAPH_SHOW_ALL, "pipeline");
     GstElement *sink = gst_bin_get_by_name(GST_BIN(pipeline->pipeline), "sink");
     GstCaps *last_caps = NULL;
     GstVideoInfo info;
@@ -407,15 +436,15 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
     }
 
     if (!sink) {
-        gub_log_pipeline(pipeline, "Pipeline does not contain a sink named 'sink'");
+     //   gub_log_pipeline(pipeline, "Pipeline does not contain a sink named 'sink'");
         return 0;
     }
 
     g_object_get(sink, "last-sample", &pipeline->last_sample, NULL);
     gst_object_unref(sink);
     if (!pipeline->last_sample) {
-        gub_log_pipeline(pipeline, "Could not read property 'last-sample' from sink %s",
-            gst_plugin_feature_get_name(gst_element_get_factory(sink)));
+      //  gub_log_pipeline(pipeline, "Could not read property 'last-sample' from sink %s",
+        //    gst_plugin_feature_get_name(gst_element_get_factory(sink)));
         return 0;
     }
 
@@ -457,6 +486,11 @@ EXPORT_API gint32 gub_pipeline_grab_frame(GUBPipeline *pipeline, int *width, int
 
 EXPORT_API void gub_pipeline_blit_image(GUBPipeline *pipeline, void *_TextureNativePtr)
 {
+	if (!pipeline)
+	{
+		return;
+	}
+
     if (!pipeline->last_sample) {
         return;
     }

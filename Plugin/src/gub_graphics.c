@@ -19,12 +19,14 @@
 */
 
 #include "gub.h"
+#include "gub_graphics.h"
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(_WIN32)
-#define SUPPORT_OPENGL 1
+#define SUPPORT_OPENGL 0
 #define SUPPORT_D3D9 1
 #define SUPPORT_D3D11 1
 #elif defined(__ANDROID__)
@@ -56,31 +58,6 @@ typedef struct _GUBGraphicBackend {
 
 GUBGraphicBackend *gub_graphic_backend = NULL;
 GUBGraphicDevice *gub_graphic_device = NULL;
-
-/* Copied from IUnityGraphics.h and added some bits */
-typedef enum UnityGfxRenderer {
-    kUnityGfxRendererOpenGL = 0, // Desktop OpenGL
-    kUnityGfxRendererD3D9 = 1, // Direct3D 9
-    kUnityGfxRendererD3D11 = 2, // Direct3D 11
-    kUnityGfxRendererGCM = 3, // PlayStation 3
-    kUnityGfxRendererNull = 4, // "null" device (used in batch mode)
-    kUnityGfxRendererXenon = 6, // Xbox 360
-    kUnityGfxRendererOpenGLES20 = 8, // OpenGL ES 2.0
-    kUnityGfxRendererOpenGLES30 = 11, // OpenGL ES 3.0
-    kUnityGfxRendererGXM = 12, // PlayStation Vita
-    kUnityGfxRendererPS4 = 13, // PlayStation 4
-    kUnityGfxRendererXboxOne = 14, // Xbox One
-    kUnityGfxRendererMetal = 16, // iOS Metal
-    kUnityGfxRendererGLCore = 17, // OpenGL Core
-    kUnityGfxRendererD3D12 = 18, // Direct3D 12
-} UnityGfxRenderer;
-
-typedef enum UnityGfxDeviceEventType {
-    kUnityGfxDeviceEventInitialize = 0,
-    kUnityGfxDeviceEventShutdown = 1,
-    kUnityGfxDeviceEventBeforeReset = 2,
-    kUnityGfxDeviceEventAfterReset = 3,
-} UnityGfxDeviceEventType;
 
 #if SUPPORT_D3D9
 // --------------------------------------------------------------------------------------------------------------------
@@ -608,7 +585,7 @@ static GstContext *gub_provide_graphic_context_egl(GUBGraphicContextEGL *gcontex
 
     gub_log("Providing context. gub_context=%p, type=%s", gcontext, type);
 
-    if (!gcontext) return;
+    if (!gcontext) return NULL;
 
     if (type != NULL) {
         if (g_strcmp0(type, GST_GL_DISPLAY_CONTEXT_TYPE) == 0) {

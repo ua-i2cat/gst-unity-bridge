@@ -166,7 +166,10 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
     void Awake()
     {
-        GStreamer.AddPluginsToPath();
+        // This method is not called here anymore. There is no need to load the dll's 
+        // everytime a gub is instanciated. So this should be called in the main app manager
+        // initial loader before using gub.
+        //GStreamer.AddPluginsToPath();
     }
 
     private static void OnFinish(IntPtr p)
@@ -175,13 +178,16 @@ public class GstUnityBridgeTexture : MonoBehaviour
 
         self.m_EventProcessor.QueueEvent(() =>
         {
-            if (self.m_Events.m_OnFinish != null)
+            if (self != null)
             {
-                self.m_Events.m_OnFinish.Invoke();
-            }
-            if (self.m_Loop)
-            {
-                self.Position = 0;
+                if (self.m_Events.m_OnFinish != null)
+                {
+                    self.m_Events.m_OnFinish.Invoke();
+                }
+                if (self.m_Loop)
+                {
+                    self.Position = 0;
+                }
             }
         });
     }
@@ -190,12 +196,15 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        if (self.m_Events.m_OnError != null)
+        if (self != null)
         {
-            self.m_EventProcessor.QueueEvent(() =>
+            if (self.m_Events.m_OnError != null)
             {
-                self.m_Events.m_OnError.Invoke(message);
-            });
+                self.m_EventProcessor.QueueEvent(() =>
+                {
+                    self.m_Events.m_OnError.Invoke(message);
+                });
+            }
         }
     }
 
@@ -205,72 +214,70 @@ public class GstUnityBridgeTexture : MonoBehaviour
     {
         GstUnityBridgeTexture self = ((GCHandle)p).Target as GstUnityBridgeTexture;
 
-        if (self.m_Events.m_OnQOS != null)
+        if (self != null)
         {
-            self.m_EventProcessor.QueueEvent(() =>
+            if (self.m_Events.m_OnQOS != null)
             {
-                QosData data = new QosData()
+                self.m_EventProcessor.QueueEvent(() =>
                 {
-                    current_jitter = current_jitter,
-                    current_running_time = current_running_time,
-                    current_stream_time = current_stream_time,
-                    current_timestamp = current_timestamp,
-                    proportion = proportion,
-                    processed = processed,
-                    dropped = dropped
-                };
-                self.m_Events.m_OnQOS.Invoke(data);
-            });
+                    QosData data = new QosData()
+                    {
+                        current_jitter = current_jitter,
+                        current_running_time = current_running_time,
+                        current_stream_time = current_stream_time,
+                        current_timestamp = current_timestamp,
+                        proportion = proportion,
+                        processed = processed,
+                        dropped = dropped
+                    };
+                    self.m_Events.m_OnQOS.Invoke(data);
+                });
+            }
         }
     }
 
     public void Initialize()
     {
-        m_HasBeenInitialized = true;
-
-        m_EventProcessor = GetComponent<EventProcessor>();
-        if (m_EventProcessor == null)
+        if (!m_HasBeenInitialized)
         {
-            m_EventProcessor = gameObject.AddComponent<EventProcessor>();
+            m_HasBeenInitialized = true;
+
+            m_EventProcessor = GetComponent<EventProcessor>();
+            if (m_EventProcessor == null)
+            {
+                m_EventProcessor = gameObject.AddComponent<EventProcessor>();
+            }
+
+            m_instanceHandle = GCHandle.Alloc(this);
+
+            m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, OnQos, (IntPtr)m_instanceHandle);
+
+            Resize(m_Width, m_Height);
+
+            Material mat = m_TargetMaterial;
+            if (mat == null && GetComponent<Renderer>())
+            {
+                // If no material is given, use the first one in the Renderer component
+                mat = GetComponent<Renderer>().material;
+            }
+
+            if (mat != null)
+            {
+                string tex_name = m_IsAlpha ? "_AlphaTex" : "_MainTex";
+                mat.SetTexture(tex_name, m_Texture);
+                mat.SetTextureScale(tex_name, new Vector2(Mathf.Abs(mat.mainTextureScale.x) * (m_FlipX ? -1F : 1F),
+                                                          Mathf.Abs(mat.mainTextureScale.y) * (m_FlipY ? -1F : 1F)));
+            }
+            else
+            if (GetComponent<GUITexture>())
+            {
+                GetComponent<GUITexture>().texture = m_Texture;
+            }
+            else
+            {
+                Debug.LogWarning(string.Format("[{0}] There is no Renderer or guiTexture attached to this GameObject, and TargetMaterial is not set.", name + GetInstanceID()));
+            }
         }
-
-        GStreamer.GUBUnityDebugLogPFN log_handler = null;
-        if (Application.isEditor && m_DebugOutput.m_Enabled)
-        {
-            log_handler = (int level, string message) => Debug.logger.Log((LogType)level, "GUB", message);
-        }
-
-        GStreamer.Ref(m_DebugOutput.m_GStreamerDebugString.Length == 0 ? null : m_DebugOutput.m_GStreamerDebugString, log_handler);
-
-        m_instanceHandle = GCHandle.Alloc(this);
-        m_Pipeline = new GstUnityBridgePipeline(name + GetInstanceID(), OnFinish, OnError, OnQos, (IntPtr)m_instanceHandle);
-
-        Resize(m_Width, m_Height);
-
-        Material mat = m_TargetMaterial;
-        if (mat == null && GetComponent<Renderer>())
-        {
-            // If no material is given, use the first one in the Renderer component
-            mat = GetComponent<Renderer>().material;
-        }
-
-        if (mat != null)
-        {
-            string tex_name = m_IsAlpha ? "_AlphaTex" : "_MainTex";
-            mat.SetTexture(tex_name, m_Texture);
-            mat.SetTextureScale(tex_name, new Vector2(Mathf.Abs(mat.mainTextureScale.x) * (m_FlipX ? -1F : 1F),
-                                                      Mathf.Abs(mat.mainTextureScale.y) * (m_FlipY ? -1F : 1F)));
-        }
-        else
-        if (GetComponent<GUITexture>())
-        {
-            GetComponent<GUITexture>().texture = m_Texture;
-        }
-        else
-        {
-            Debug.LogWarning(string.Format("[{0}] There is no Renderer or guiTexture attached to this GameObject, and TargetMaterial is not set.", name + GetInstanceID()));
-        }
-
     }
 
     void Start()
@@ -332,32 +339,43 @@ public class GstUnityBridgeTexture : MonoBehaviour
         {
             m_Pipeline.Destroy();
             m_Pipeline = null;
-            GStreamer.Unref();
         }
         m_instanceHandle.Free();
+        Debug.Log("[GUB] Destroy");
     }
 
     public void Play()
     {
-        m_Pipeline.SetVolume(m_AudioVolume);
-        m_Pipeline.Play();
-        m_FirstFrame = true;
+        if (m_Pipeline != null)
+        {
+            m_Pipeline.SetVolume(m_AudioVolume);
+            m_Pipeline.Play();
+            m_FirstFrame = true;
+        }
     }
 
     public void Pause()
     {
-        m_Pipeline.Pause();
+        if (m_Pipeline != null)
+        {
+            m_Pipeline.Pause();
+        }
     }
 
     public void Stop()
     {
         if(m_Pipeline != null)
+        {
             m_Pipeline.Stop();
+        }
     }
 
     public void Close()
     {
-        m_Pipeline.Close();
+        if (m_Pipeline != null)
+        {
+            m_Pipeline.Close();
+        }
     }
 
     void OnDestroy()

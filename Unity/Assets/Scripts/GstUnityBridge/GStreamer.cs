@@ -59,6 +59,17 @@ public class GStreamer
 
     public static void AddPluginsToPath()
     {
+
+#if UNITY_ANDROID
+        // Force loading of gstreamer_android.so before GstUnityBridge.so
+        gst_android_get_application_class_loader();
+        AndroidJNIHelper.debug = true;
+        AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+        AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
+        gstAndroid.CallStatic("init", activity);
+#endif
+
         // Setup the PATH environment variable so it can find the GstUnityBridge dll.
         var currentPath = Environment.GetEnvironmentVariable("PATH",
             EnvironmentVariableTarget.Process);
@@ -67,9 +78,9 @@ public class GStreamer
 #if UNITY_EDITOR
 
 #if UNITY_EDITOR_32
-        dllPath = Application.dataPath + "/Plugins/x86";
+        dllPath = Application.dataPath + "/Plugins/GStreamer/x86";
 #elif UNITY_EDITOR_64
-        dllPath = Application.dataPath + "/Plugins/x86_64";
+        dllPath = Application.dataPath + "/Plugins/GStreamer/x86_64";
 #endif
 
         if (currentPath != null && currentPath.Contains(dllPath) == false)
@@ -91,15 +102,7 @@ public class GStreamer
 
     internal static void Ref(string gst_debug_string, GUBUnityDebugLogPFN log_handler)
     {
-#if UNITY_ANDROID
-        // Force loading of gstreamer_android.so before GstUnityBridge.so
-        gst_android_get_application_class_loader();
-        AndroidJNIHelper.debug = true;
-        AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-        AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-        AndroidJavaClass gstAndroid = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer");
-        gstAndroid.CallStatic("init", activity);
-#endif
+
         gub_log_set_unity_handler(log_handler);
         gub_ref(gst_debug_string);
     }
