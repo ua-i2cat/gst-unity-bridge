@@ -4,18 +4,19 @@ using UnityEngine;
 
 public class GstUnityBridgeStarter : MonoBehaviour
 {
-
     public bool GStreamerDebugActivated = true;
     private readonly string GStreamerDebugString = "2,dashdemux:5";
 
-    // Use this for initialization
+    /// <summary>
+	/// Initializes the GStreamer on Awake
+	/// </summary>
     void Awake()
     {
         LoadGStreamer();
     }
 
     /// <summary>
-    /// When Application is closed calls UnloadApp and UnloadGStreamer methods
+    /// When Application is closed calls UnloadGStreamer method
     /// </summary>
     void OnApplicationQuit()
     {
