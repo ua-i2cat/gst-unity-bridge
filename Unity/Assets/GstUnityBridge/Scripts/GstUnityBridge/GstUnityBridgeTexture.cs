@@ -163,14 +163,7 @@ public class GstUnityBridgeTexture : MonoBehaviour
     private EventProcessor m_EventProcessor = null;
     private GCHandle m_instanceHandle;
     private bool m_FirstFrame = true;
-
-    void Awake()
-    {
-        // This method is not called here anymore. There is no need to load the dll's 
-        // everytime a gub is instanciated. So this should be called in the main app manager
-        // initial loader before using gub.
-        //GStreamer.AddPluginsToPath();
-    }
+	
 
     private static void OnFinish(IntPtr p)
     {
