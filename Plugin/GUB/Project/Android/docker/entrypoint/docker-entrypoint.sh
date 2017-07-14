@@ -2,19 +2,15 @@
 . $(dirname $0)/commands.sh
 
 usage="
-$(basename "$0") [-t] [-b branch-name] [-l] [-g] [-h] -- program to build GUB (GStreamer Unity Bridge)
+$(basename "$0") [-t] [-g] [-h] -- program to build GUB (GStreamer Unity Bridge)
 
 where:
-    -t | --gubTest    build android application for testing GUB
-    -b | --gubBranch  download repository and set given branch
-    -l | --gubLocal   copy local repository
-    -g | --gubGstAnd  use builded libgstreamer_android.so
-    -h | --gubHelp    show this help text
+    -t | --test    build android application for testing GUB
+    -g | --gstAnd  use prebuilded libgstreamer_android.so
+    -h | --help    show this help text
 "
 
 BUILD_TEST=false
-GIT_BRANCH="develop"
-COPY_LOCAL_REPO=false
 COPY_GST_AND_LIB=false
 
 show_help=false
@@ -23,34 +19,18 @@ do
   key="$1"
   case $key in
 
-    -t|--gubTest)   BUILD_TEST=true
-                    ;;
+    -t|--test)    BUILD_TEST=true
+                  ;;
 
-    -b|--gubBranch) GIT_BRANCH="$2"
-                    set_branch=true
-                    if [ "$COPY_LOCAL_REPO" = true ]; then
-                      echo "Invalid arguments. Can not use -b and -l together."
-                      show_help=true
-                    fi
-                    shift
-                    ;;
+    -g|--gstAnd)  COPY_GST_AND_LIB=true
+                  ;;
 
-    -l|--gubLocal)  COPY_LOCAL_REPO=true
-                    if [ "$set_branch" = true ]; then
-                    echo "Invalid arguments. Can not use -b and -l together."
-                    show_help=true
-                    fi
-                    ;;
+    -h|--help)    show_help=true
+                  ;;
 
-    -g|--gubGstAnd) COPY_GST_AND_LIB=true
-                    ;;
-
-    -h|--gubHelp)   show_help=true
-                    ;;
-
-    *)              echo "Unknown argument : " $key
-                    show_help=true
-                    ;;
+    *)            echo "Unknown argument : " $key
+                  show_help=true
+                  ;;
   esac
   shift
 done
@@ -60,14 +40,10 @@ if [ "$show_help" = true ]; then
   exit
 fi
 
-if [ "$COPY_LOCAL_REPO" = true ]; then
-  copyLocalRepo
-else
-  downloadRepo $GIT_BRANCH
-fi
+copyRepo
 
 if [ "$BUILD_TEST" = true ]; then
-  buildTest $COPY_GST_AND_LIB
+  buildTest
 else
-  buildGUB $COPY_GST_AND_LIB
+  buildGUB
 fi

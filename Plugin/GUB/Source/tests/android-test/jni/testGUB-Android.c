@@ -102,7 +102,7 @@ void on_surface_created()
     gst_object_unref(net_clock);
   }
 
-	gub_pipeline_setup_decoding_clock(pipeline, "http://server.immersiatv.eu/public_http/dev/contents/ibc/dragon/tv_tv_12/tv_tv_12.mpd", 0, -1, server_clock_address, SERVER_CLOCK_PORT, basetime, 0,0,0,0, FALSE);
+  gub_pipeline_setup_decoding_clock(pipeline, "http://192.168.10.91:8080/dash/Tile_2/Video/tv/Tile_2/tile_2.mpd", 0, -1, server_clock_address, SERVER_CLOCK_PORT, basetime, 0,0,0,0, FALSE);
   gub_pipeline_play(pipeline);
 
   glGenBuffers(1, &buffer);

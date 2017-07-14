@@ -1,59 +1,63 @@
 #!/bin/bash
 
-function downloadRepo
-{
-  BRANCH_NAME=$1
-  cd /home/
-  git clone https://stash.i2cat.net/scm/imtv/immersiatv-player.git --branch $BRANCH_NAME
-}
+DOCKER_GST_UNITY_BRIDGE="/home/gst-unity-bridge"
 
-function copyLocalRepo
+function copyRepo
 {
-  MOUNT_DIR="/mnt/immersiatv-player"
-  DST_DIR="/home/immersiatv-player"
-
-  declare -a arr=(Modules/Core/GUB/Project/Android
-                  Modules/Core/GUB/Source
-                  Modules/Utils/DvbCssWc/Source
+  declare -a arr=(Plugin/GUB/Project/Android
+                  Plugin/GUB/Source
+                  Plugin/DvbCssWc/Source
+                  Plugin/Externals/gstreamer/Project/Android
                  )
 
-  cd $MOUNT_DIR
-  find -type d -links 2 -exec mkdir -p "$DST_DIR/{}" \;
+  cd ${MOUNT_GST_UNITY_BRIDGE}
+  find -type d -exec mkdir -p "$DOCKER_GST_UNITY_BRIDGE/{}" \;
   for i in "${arr[@]}"
   do
-     cp -r $MOUNT_DIR/$i $DST_DIR/$(dirname $i)
+     cp -r ${MOUNT_GST_UNITY_BRIDGE}/$i $DOCKER_GST_UNITY_BRIDGE/$(dirname $i)
   done
 }
 
 function buildTest
 {
-  cd /home/immersiatv-player/Modules/Core/GUB/Project/Android/noUnityTest
-  buildAPK debug $1
-  mkdir -p ${ARTIFACTS_PATH}/test
-  cp ./bin/TestGUB-debug.apk ${ARTIFACTS_PATH}/test
+  # it HAVE TO be subdirectory of ${MOUNT_OUTPUT_PATH}
+  OUTPUT_PATH=${MOUNT_OUTPUT_PATH}/test
+  cd $DOCKER_GST_UNITY_BRIDGE/Plugin/GUB/Project/Android/noUnityTest
+  buildAPK debug $OUTPUT_PATH
+  cp ./bin/TestGUB-debug.apk $OUTPUT_PATH
 }
 
 function buildGUB
 {
-  cd /home/immersiatv-player/Modules/Core/GUB/Project/Android/GUB
-  buildAPK release $1
+  # it HAVE TO be subdirectory of ${MOUNT_OUTPUT_PATH}
+  OUTPUT_PATH=${MOUNT_OUTPUT_PATH}/gub
+  cd $DOCKER_GST_UNITY_BRIDGE/Plugin/GUB/Project/Android/GUB
+  buildAPK release $OUTPUT_PATH
   cd bin/classes
   jar cvf gub.jar org/*
-  cp gub.jar ${ARTIFACTS_PATH}
+  cp gub.jar $OUTPUT_PATH
   cd ../../
-  cp -r libs/${NDK_APP_ABI} ${ARTIFACTS_PATH}
+  cp -r libs/${NDK_APP_ABI} $OUTPUT_PATH
 }
 
 function buildAPK
 {
   BUILD_TARGET=$1
-  COPY_GST_AND_LIB=$2
+  BUILD_OUTPUT_PATH=$2
 
-  rm -r ${ARTIFACTS_PATH}/*
+  # be careful with rm command. Be sure that you remove the subdirectory of ${MOUNT_OUTPUT_PATH}
+  # it HAVE TO be subdirectory, because remember that someone can give you in config OUTPUT_PATH to "/"
+  rm -r $BUILD_OUTPUT_PATH
+  mkdir -p $BUILD_OUTPUT_PATH
+
   android update project -p . -s --target ${NDK_TARGET_LEVEL}
   ndk-build APP_ABI=${NDK_APP_ABI}
+  if [ $? -ne 0 ]; then
+    echo BUILD FAILED
+    exit 1
+  fi
   if [ "$COPY_GST_AND_LIB" = true ]; then
-    cp /mnt/libgstreamer_android.so libs/${NDK_APP_ABI}/
+    cp ${MOUNT_LIB_GST_ANDROID} libs/${NDK_APP_ABI}/libgstreamer_android.so
   fi
   ant $BUILD_TARGET
 }

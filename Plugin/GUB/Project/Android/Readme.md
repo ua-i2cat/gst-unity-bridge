@@ -1,83 +1,240 @@
-# Android GUB Dockerfile
+# **Android GUB Dockerfile**
 
 Dockerfile for building GUB under Android
 
+
+## **Linux**
+
+The instruction is prepare for Ubuntu distribution and it was tested on Ubuntu 16.04.
+
+### Prerequisites
+
+You need to install [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/). To do it, you can:
+
+* follow the instruction [here](https://docs.docker.com/compose/install), **or**
+* run script below (up to date on 19.12.2016).
+
+```
+./docker/install.sh
+```
+
+
+### Prebuild
+
+Create new Docker image:
+
+```
+docker-compose -f docker/docker-compose.yml build
+```
+
+
 ### Build
 
-To create new Docker image:
+Compile GUB for Android:
 
 ```
-docker build ./docker -t gub/android
-```
-
-
-To compile GUB for Android:
-
-```
-export ROOT_GUB_DIR=$(realpath ./../../)
-docker run -v ${ROOT_GUB_DIR}/Build/Android:/mnt/gub -it gub/android
+./build.sh
 ```
 
 
 ### Options
 
-To specify git branch to build GUB use ``--gubBranch branch-name`` (without this option is develop)
+* ``-g`` or ``--gstAnd``  
+Build GUB with own prebuild of libgstreamer_android.so file:  
+(path to the file set in ``docker/docker-compose.yml``)
 
 ```
-docker run -v ${ROOT_GUB_DIR}/Build/Android:/mnt/gub -it gub/android --gubBranch branch-name
-```
-
-
-To build GUB from local repository use ``--gubLocal``:
-
-```
-export ROOT_IMMERSIATV_PLAYER_DIR=$(realpath ./../../../../../)
-docker run -v ${ROOT_GUB_DIR}/Build/Android:/mnt/gub -v ${ROOT_IMMERSIATV_PLAYER_DIR}:/mnt/immersiatv-player -it gub/android --gubLocal
+./build.sh -g
 ```
 
 
-To build GUB with own prebuild libgstreamer_android.so file use ``--gubGstAnd``:
+* ``-h`` or ``--help``  
+See help:
 
 ```
-export GST_AND_LIB_PATH=$(realpath ./../../../../../Projects/ImmersiaTV_Client/Assets/Plugins/GStreamer/android_arm/libgstreamer_android.so)
-docker run -v ${ROOT_GUB_DIR}/Build/Android:/mnt/gub -v ${GST_AND_LIB_PATH}:/mnt/libgstreamer_android.so -it gub/android --gubGstAnd
-```
-
-To see help use ``--gubHelp``
-
-```
-docker run -it gub/android --gubHelp
+./build.sh -h
 ```
 
 
 ### Test
 
-All above options can be also used to build testing application.  
-To build application for testing GUB use ``--gubTest``:
+Build application for testing GUB without Unity use ``-t`` or ``--test``:
 
 ```
-docker run -v ${ROOT_GUB_DIR}/Build/Android:/mnt/gub -it gub/android --gubTest
+./build.sh -t
+```
+
+Upload the testing application on connected android device:
+
+```
+./noUnityTest/upload.sh
+```
+
+### Settings
+
+In ``docker/docker-compose.yml`` is configuration for building and running docker image.  
+If you don't want to use default settings, you can modify this file.
+
+----------
+
+## **Windows 10** *(Docker)*
+
+This part is only for **Windows 10 Professional or Enterprise 64-bit**. If you have other Windows system, or you use *Doocker Toolbox*, please go to [Other Windows](#other-windows-docker-toolbox) section.
+
+
+### Prerequisites
+
+You need to install [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/). To do it, you can:
+
+* download and install [this](https://download.docker.com/win/stable/InstallDocker.msi)
+
+
+### Prebuild
+
+Create new Docker image:
+
+```
+docker-compose -f docker/docker-compose.yml build
+```
+
+
+### Build
+
+Compile GUB for Android:
+
+```
+docker-compose -f docker/docker-compose.yml run gub-android
+```
+
+
+### Options
+
+* ``-g`` or ``--gstAnd``  
+Build GUB with own prebuild of libgstreamer_android.so file:  
+(path to the file set in ``docker/docker-compose.yml``)
+
+```
+docker-compose -f docker/docker-compose.yml run gub-android -g
+```
+
+
+* ``-h`` or ``--help``  
+See help:
+
+```
+docker-compose -f docker/docker-compose.yml run gub-android -h
+```
+
+
+### Test
+
+Build application for testing GUB without Unity use ``-t`` or ``--test``:
+
+```
+docker-compose -f docker/docker-compose.yml run gub-android -t
+```
+
+Upload the testing application on connected android device:
+
+```
 adb uninstall com.testgub
-adb install -r ${ROOT_GUB_DIR}/Build/Android/test/TestGUB-debug.apk
+adb install -r path/to/test/TestGUB-debug.apk
+```
+
+### Settings
+
+In ``docker/docker-compose.yml`` is configuration for building and running docker image.  
+If you don't want to use default settings, you can modify this file.
+
+----------
+
+## **Other Windows** *(Docker Toolbox)*
+
+
+### Prerequisites
+
+You need to install [Docker Toolbox](www.docker.com/products/docker-toolbox) and [Docker Compose](https://docs.docker.com/compose/). To do it, you can:
+
+* download and install [this](https://download.docker.com/win/stable/DockerToolbox.exe)
+
+
+### Prebuild
+
+Configure *Docker Toolbox* and *VirtualBox*:
+
+1. Run *Docker Toolbox* and wait to end of processing
+2. Run *VirtualBox*
+3. Stop the image named *default*. Close -> Power off
+4. On image named *default* go to Settings -> Shared Folders
+5. Add your gst-unity-bridge repository folder as shared folder:  
+***Folder Path*** - path to your gst-unity-bridge repository  
+***Folder Name*** = gst-unity-bridge  
+***Auto-mount*** - checked
+6. Reopen *Docker Toolbox* and navigate to this *Readme* location
+
+Create new Docker image:
+
+```
+docker-compose -f docker/docker-compose-toolbox.yml build
 ```
 
 
-### Clear
+### Build
 
-To remove all images and containers:
+Compile GUB for Android:
+
+```
+docker-compose -f docker/docker-compose-toolbox.yml run gub-android
+```
+
+
+### Options
+
+* ``-g`` or ``--gstAnd``  
+Build GUB with own prebuild of libgstreamer_android.so file:  
+(path to the file set in ``docker/docker-compose-toolbox.yml``)
+
+```
+docker-compose -f docker/docker-compose-toolbox.yml run gub-android -g
+```
+
+
+* ``-h`` or ``--help``  
+See help:
+
+```
+docker-compose -f docker/docker-compose-toolbox.yml run gub-android -h
+```
+
+
+### Test
+
+Build application for testing GUB without Unity use ``-t`` or ``--test``:
+
+```
+docker-compose -f docker/docker-compose-toolbox.yml run gub-android -t
+```
+
+Upload the testing application on connected android device:
+
+```
+adb uninstall com.testgub
+adb install -r path/to/test/TestGUB-debug.apk
+```
+
+
+### Settings
+
+In ``docker/docker-compose-toolbox.yml`` is configuration for building and running docker image.  
+If you don't want to use default settings, you can modify this file.
+
+----------
+
+## Clear
+
+To remove all containers and images:
 
 ```
 docker rm $(docker ps -a -q)
 docker rmi $(docker images -q)
 ```
-
-
-### Prerequisities
-
-You need to install [Docker](https://www.docker.com/)
-
-
-## Author
-
-* **Wojciech Kapsa** - [email](kapsa@man.poznan.pl)
-* **Daniel Piesik**  - [email](dpiesik@man.poznan.pl)
