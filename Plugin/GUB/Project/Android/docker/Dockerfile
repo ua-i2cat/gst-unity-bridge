@@ -79,6 +79,9 @@ tar -xjf gstreamer-1.0-android-${GST_ANDROID_PART}-${GST_ANDROID_VERSION}.tar.bz
 rm gstreamer-1.0-android-${GST_ANDROID_PART}-${GST_ANDROID_VERSION}.tar.bz2
 
 RUN sed -i -e 's/#define GST_GL_HAVE_GLSYNC 0/#define GST_GL_HAVE_GLSYNC 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h
+RUN sed -i -e 's/#define GST_GL_HAVE_GLUINT64 0/#define GST_GL_HAVE_GLUINT64 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h
+RUN sed -i -e 's/#define GST_GL_HAVE_GLINT64 0/#define GST_GL_HAVE_GLINT64 1/g' $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h
+
 RUN cp $GSTREAMER_ROOT_ANDROID/lib/gstreamer-1.0/include/gst/gl/gstglconfig.h $GSTREAMER_ROOT_ANDROID/include/gstreamer-1.0/gst/gl/
 #===============================================================================
 

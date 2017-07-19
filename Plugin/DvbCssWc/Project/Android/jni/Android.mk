@@ -1,9 +1,9 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-IMMERSIATV_PLAYER_ROOT := $(abspath $(LOCAL_PATH)/../../../../../..)
-DVB_CSS_WC_SOURCE_PATH := $(IMMERSIATV_PLAYER_ROOT)/Modules/Utils/DvbCssWc/Source
-GSTREAMER_PROJECT_PATH := $(IMMERSIATV_PLAYER_ROOT)/Modules/External/gstreamer/Project/Android
+GUB_ROOT := $(abspath $(LOCAL_PATH)/../../../../..)
+DVB_CSS_WC_SOURCE_PATH := $(GUB_ROOT)/Plugin/DvbCssWc/Source
+GSTREAMER_PROJECT_PATH := $(GUB_ROOT)/Plugin/Externals/gstreamer/Project/Android
 
 LOCAL_MODULE           := DvbCssWc
 LOCAL_SRC_FILES        := $(DVB_CSS_WC_SOURCE_PATH)/gstdvbcsswcclient.c \

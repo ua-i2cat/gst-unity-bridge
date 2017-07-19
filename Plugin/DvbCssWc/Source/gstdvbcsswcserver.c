@@ -23,10 +23,11 @@
 
 #include "gstdvbcsswcserver.h"
 #include "gstdvbcsswcpacket.h"
+#include "gstdvbcsswccommon.h"
 #include <stdlib.h>
 
-GST_DEBUG_CATEGORY_STATIC (wc_server_debug);
-#define GST_CAT_DEFAULT (wc_server_debug)
+GST_DEBUG_CATEGORY_STATIC (dvbcss_wc_server);
+#define GST_CAT_DEFAULT (dvbcss_wc_server)
 
 #define DEFAULT_ADDRESS         "0.0.0.0"
 #define DEFAULT_PORT            5637
@@ -79,10 +80,8 @@ static void gst_dvb_css_wc_server_set_property (GObject * object, guint prop_id,
 static void gst_dvb_css_wc_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-gdouble gst_dvb_css_wc_server_measure_precision(GstClock *clock);
-
 #define _do_init \
-  GST_DEBUG_CATEGORY_INIT (wc_server_debug, "wc_server_debug", 0, "Network dvb css wc server"); \
+  GST_DEBUG_CATEGORY_INIT (dvbcss_wc_server, "dvbcss_wc_server", 0, "Network dvb css wc server"); \
   G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, gst_dvb_css_wc_server_initable_iface_init)
 
 #define gst_dvb_css_wc_server_parent_class parent_class
@@ -166,12 +165,6 @@ gst_dvb_css_wc_server_finalize (GObject * object)
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
-gdouble gst_dvb_css_wc_server_measure_precision(GstClock *clock)
-{
-    gdouble nsec = gst_guint64_to_gdouble(gst_clock_get_resolution(clock));      
-    return GST_TIME_AS_SECONDS(nsec);
-}
-
 static gpointer
 gst_dvb_css_wc_server_thread (gpointer data)
 {
@@ -181,20 +174,21 @@ gst_dvb_css_wc_server_thread (gpointer data)
   GstDvbCssWcPacket *packet, *reply, *followupReply;
   GError *err = NULL;
   GstClock *clock = self->priv->clock;
+  GstClockTime time;
 
-  self->priv->precision_secs = gst_dvb_css_wc_server_measure_precision(clock);  
+  self->priv->precision_secs = measure_precision_sec (clock);
 
-  GST_INFO_OBJECT (self, "dvb css wc server thread is running");
+  GST_TRACE_OBJECT (self, "dvb css wc server thread is running");
 
   while (TRUE) {
     GSocketAddress *sender_addr = NULL;
 
-    GST_LOG_OBJECT (self, "waiting on socket");
+    GST_TRACE_OBJECT (self, "waiting on socket");
     if (!g_socket_condition_wait (socket, G_IO_IN, cancel, &err)) {
-      GST_INFO_OBJECT (self, "socket error: %s", err->message);
-
       if (err->code == G_IO_ERROR_CANCELLED)
         break;
+      
+      GST_WARNING_OBJECT (self, "socket error: %s", err->message);
 
       /* try again */
       g_usleep (G_USEC_PER_SEC / 10);
@@ -204,12 +198,11 @@ gst_dvb_css_wc_server_thread (gpointer data)
     }
 
     /* got data in */
+    time = gst_clock_get_time(clock);
     packet = gst_dvb_css_wc_packet_receive (socket, &sender_addr, &err);
-
-    gst_dvb_css_wc_packet_print(packet);
     
     if (err != NULL) {
-      GST_DEBUG_OBJECT (self, "receive error: %s", err->message);
+      GST_WARNING_OBJECT (self, "receive error: %s", err->message);
       g_usleep (G_USEC_PER_SEC / 10);
       g_error_free (err);
       err = NULL;
@@ -221,7 +214,7 @@ gst_dvb_css_wc_server_thread (gpointer data)
            && packet->version == 0){
         /* do what we were asked to and send the packet back */
             reply = gst_dvb_css_wc_packet_copy(packet);
-            reply->receive_timevalue = gst_clock_get_time(clock);
+            reply->receive_timevalue = time;
 
             if(self->priv->followup)
                 reply->message_type = GST_DVB_CSS_WC_MSG_RESPONSE_WITH_FOLLOWUP;
@@ -234,22 +227,24 @@ gst_dvb_css_wc_server_thread (gpointer data)
 
             if(self->priv->followup){
                 followupReply = gst_dvb_css_wc_packet_copy(reply);
-                followupReply->transmit_timevalue = gst_clock_get_time(clock);
                 followupReply->message_type = GST_DVB_CSS_WC_MSG_FOLLOWUP;
+                // FIXME: transmit_timevalue should be set to more accurate
+                // measurement of the time of transmission of the previous response
+                //followupReply->transmit_timevalue = gst_clock_get_time(clock);
                 gst_dvb_css_wc_packet_send (followupReply, socket, sender_addr, NULL);
-                g_free (followupReply);
+                gst_dvb_css_wc_packet_free (followupReply);
             }
-            g_free (reply);
+            gst_dvb_css_wc_packet_free (reply);
         }else
             GST_ERROR_OBJECT(self, "Received non request message");     
     }    
     g_object_unref (sender_addr);
-    g_free (packet);
+    gst_dvb_css_wc_packet_free (packet);
   }
 
   g_error_free (err);
 
-  GST_INFO_OBJECT (self, "dvb css wc server thread is stopping");
+  GST_TRACE_OBJECT (self, "dvb css wc server thread is stopping");
   return NULL;
 }
 
@@ -344,14 +339,14 @@ gst_dvb_css_wc_server_start (GstDvbCssWcServer * self, GError ** error)
     inet_addr = g_inet_address_new_any (G_SOCKET_FAMILY_IPV4);
   }
 
-  GST_LOG_OBJECT (self, "creating socket");
+  GST_TRACE_OBJECT (self, "creating socket");
   socket = g_socket_new (g_inet_address_get_family (inet_addr),
       G_SOCKET_TYPE_DATAGRAM, G_SOCKET_PROTOCOL_UDP, &err);
 
   if (!socket)
     goto no_socket;
 
-  GST_DEBUG_OBJECT (self, "binding on port %d", self->priv->port);
+  GST_TRACE_OBJECT (self, "binding on port %d", self->priv->port);
   socket_addr = g_inet_socket_address_new (inet_addr, self->priv->port);
   if (!g_socket_bind (socket, socket_addr, TRUE, &err)) {
     g_object_unref (socket_addr);
@@ -370,14 +365,14 @@ gst_dvb_css_wc_server_start (GstDvbCssWcServer * self, GError ** error)
   if (g_strcmp0 (address, self->priv->address)) {
     g_free (self->priv->address);
     self->priv->address = address;
-    GST_DEBUG_OBJECT (self, "notifying address %s", address);
+    GST_TRACE_OBJECT (self, "notifying address %s", address);
     g_object_notify (G_OBJECT (self), "address");
   } else {
     g_free (address);
   }
   if (port != self->priv->port) {
     self->priv->port = port;
-    GST_DEBUG_OBJECT (self, "notifying port %d", port);
+    GST_TRACE_OBJECT (self, "notifying port %d", port);
     g_object_notify (G_OBJECT (self), "port");
   }
   GST_DEBUG_OBJECT (self, "bound on UDP address %s, port %d",
@@ -435,7 +430,7 @@ gst_dvb_css_wc_server_stop (GstDvbCssWcServer * self)
 {
   g_return_if_fail (self->priv->thread != NULL);
 
-  GST_INFO_OBJECT (self, "stopping..");
+  GST_TRACE_OBJECT (self, "stopping..");
   g_cancellable_cancel (self->priv->cancel);
 
   g_thread_join (self->priv->thread);
@@ -450,7 +445,7 @@ gst_dvb_css_wc_server_stop (GstDvbCssWcServer * self)
   g_object_unref (self->priv->socket);
   self->priv->socket = NULL;
 
-  GST_INFO_OBJECT (self, "stopped");
+  GST_DEBUG_OBJECT (self, "stopped");
 }
 
 static gboolean

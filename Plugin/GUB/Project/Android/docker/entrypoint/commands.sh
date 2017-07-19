@@ -6,8 +6,9 @@ function copyRepo
 {
   declare -a arr=(Plugin/GUB/Project/Android
                   Plugin/GUB/Source
+				  Plugin/DvbCssWc/Project/Android
                   Plugin/DvbCssWc/Source
-                  Plugin/Externals/gstreamer/Project/Android
+				  Plugin/Externals/gstreamer/Project/Android
                  )
 
   cd ${MOUNT_GST_UNITY_BRIDGE}

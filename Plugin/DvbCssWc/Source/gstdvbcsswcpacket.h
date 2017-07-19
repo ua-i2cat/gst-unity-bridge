@@ -34,6 +34,7 @@ G_BEGIN_DECLS
 #define GST_DVB_CSS_WC_PACKET_SIZE 32
 #define GST_DVB_CSS_WC_VERSION 0
 
+#define GST_DVB_CSS_WC_TYPE_PACKET gst_dvb_css_wc_packet_get_type ()
 typedef struct _GstDvbCssWcPacket GstDvbCssWcPacket;
 
 enum {
@@ -57,6 +58,9 @@ struct _GstDvbCssWcPacket {
     guint32 originate_timevalue_nanos;
     GstClockTime receive_timevalue;
     GstClockTime transmit_timevalue;
+
+    // this is not part of packet to send
+    GstClockTime response_timevalue;
 };
 
 GType gst_dvb_css_wc_packet_get_type(void);
@@ -80,8 +84,6 @@ gint8 gst_dvb_css_wc_packet_encode_precision(gdouble precisionSecs);
 gdouble gst_dvb_css_wc_packet_decode_precision(gint8 precision);
 guint32 gst_dvb_css_wc_packet_encode_max_freq_error(gdouble max_freq_error_ppm);
 gdouble gst_dvb_css_wc_packet_decode_max_freq_error(guint32 max_freq_error);
-
-void gst_dvb_css_wc_packet_print(const GstDvbCssWcPacket * packet);
 
 GstClockTime wc_timestamp_to_gst_clock_time (guint32 seconds, guint32 fraction);
 guint32 gst_clock_time_to_wc_timestamp_seconds (GstClockTime gst);

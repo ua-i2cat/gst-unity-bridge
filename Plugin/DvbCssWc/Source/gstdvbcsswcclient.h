@@ -5,6 +5,7 @@
  * Copyright (C) 2016 
  *  Authors:  Wojciech Kapsa PSNC <kapsa@man.poznan.pl>
  *  Authors:  Xavi Artigas <xavi.artigas@i2cat.net>
+ *  Authors:  Daniel Piesik <dpiesik@man.poznan.pl>
  *
  * gstdvbcsswcclient.h: clock that synchronizes itself to a time over
  * the network using DVB CSS WC
@@ -30,19 +31,14 @@
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK \
-  (gst_dvb_css_wc_client_clock_get_type())
-#define GST_DVB_CSS_WC_CLIENT_CLOCK(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK,GstDvbCssWcClientClock))
-#define GST_DVB_CSS_WC_CLIENT_CLOCK_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK,GstDvbCssWcClientClockClass))
-#define GST_IS_DVB_CSS_WC_CLIENT_CLOCK(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK))
-#define GST_IS_DVB_CSS_WC_CLIENT_CLOCK_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK))
+#define GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK            (gst_dvb_css_wc_client_clock_get_type())
+#define GST_DVB_CSS_WC_CLIENT_CLOCK(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK, GstDvbCssWcClientClock))
+#define GST_DVB_CSS_WC_CLIENT_CLOCK_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass),  GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK, GstDvbCssWcClientClockClass))
+#define GST_IS_DVB_CSS_WC_CLIENT_CLOCK(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK))
+#define GST_IS_DVB_CSS_WC_CLIENT_CLOCK_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass),  GST_TYPE_DVB_CSS_WC_CLIENT_CLOCK))
 
-typedef struct _GstDvbCssWcClientClock GstDvbCssWcClientClock;
-typedef struct _GstDvbCssWcClientClockClass GstDvbCssWcClientClockClass;
+typedef struct _GstDvbCssWcClientClock        GstDvbCssWcClientClock;
+typedef struct _GstDvbCssWcClientClockClass   GstDvbCssWcClientClockClass;
 typedef struct _GstDvbCssWcClientClockPrivate GstDvbCssWcClientClockPrivate;
 
 /**
@@ -50,23 +46,22 @@ typedef struct _GstDvbCssWcClientClockPrivate GstDvbCssWcClientClockPrivate;
  *
  * Opaque #GstDvbCssWcClient structure.
  */
-struct _GstDvbCssWcClientClock {
+struct _GstDvbCssWcClientClock
+{
   GstSystemClock clock;
 
   /*< private >*/
   GstDvbCssWcClientClockPrivate *priv;
-
   gpointer _gst_reserved[GST_PADDING];
 };
 
-struct _GstDvbCssWcClientClockClass {
+struct _GstDvbCssWcClientClockClass
+{
   GstSystemClockClass parent_class;
 
   /*< private >*/
   gpointer _gst_reserved[GST_PADDING];
 };
-
-GType           gst_dvb_css_wc_client_clock_get_type	(void);
 
 /**
  * gst_dvb_css_wc_client_clock_new:
@@ -82,8 +77,8 @@ GType           gst_dvb_css_wc_client_clock_get_type	(void);
  * Returns: a new #GstClock that receives a time from the remote
  * clock.
  */
-GstClock*	gst_dvb_css_wc_client_clock_new	(const gchar *name, const gchar *remote_address,
-                                                 gint remote_port, GstClockTime base_time);
+GstClock*	gst_dvb_css_wc_client_clock_new      (const gchar *name, const gchar *remote_address, gint remote_port, GstClockTime base_time);
+GType     gst_dvb_css_wc_client_clock_get_type (void);
 
 #ifdef G_DEFINE_AUTOPTR_CLEANUP_FUNC
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GstDvbCssWcClientClock, gst_object_unref)

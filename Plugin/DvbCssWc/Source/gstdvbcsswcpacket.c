@@ -31,8 +31,13 @@
 
 #include "gstdvbcsswcpacket.h"
 
-G_DEFINE_BOXED_TYPE (GstDvbCssWcPacket, gst_dvb_css_wc_packet,
-    gst_dvb_css_wc_packet_copy, gst_dvb_css_wc_packet_free);
+GST_DEBUG_CATEGORY_STATIC (dvbcss_wc_packet);
+#define GST_CAT_DEFAULT   (dvbcss_wc_packet)
+#define GST_GET_LEVEL (gst_debug_category_get_threshold(dvbcss_wc_packet))
+#define _do_init GST_DEBUG_CATEGORY_INIT (dvbcss_wc_packet, "dvbcss_wc_packet", 0, "DVB CSS WC packets");
+
+G_DEFINE_BOXED_TYPE_WITH_CODE (GstDvbCssWcPacket, gst_dvb_css_wc_packet,
+    gst_dvb_css_wc_packet_copy, gst_dvb_css_wc_packet_free, _do_init);
 
 GstClockTime
 wc_timestamp_to_gst_clock_time (guint32 seconds, guint32 fraction)
@@ -44,15 +49,39 @@ guint32
 gst_clock_time_to_wc_timestamp_seconds (GstClockTime gst)
 {
   GstClockTime seconds = gst_util_uint64_scale (gst, 1, GST_SECOND);
-  return seconds;
+  return (guint32)seconds;
 }
 
 guint32
 gst_clock_time_to_wc_timestamp_fraction (GstClockTime gst)
 {
   GstClockTime seconds = gst_util_uint64_scale (gst, 1, GST_SECOND);    
-  return (gst - (seconds * GST_SECOND));
+  return (guint32)(gst - (seconds * GST_SECOND));
 }
+
+#define PACKET_LOG(info, packet) \
+    if(packet != NULL && GST_GET_LEVEL >= GST_LEVEL_LOG){ \
+    GST_LOG("%s:\n"                 \
+            "version: %u\n"         \
+            "message_type: %u\n"    \
+            "precision: %i\n"       \
+            "reserved: %u\n"        \
+            "max_freq_error: %u\n"  \
+            "originate_timevalue: %" GST_TIME_FORMAT "\n" \
+            "receive_timevalue: %" GST_TIME_FORMAT "\n"   \
+            "transmit_timevalue: %" GST_TIME_FORMAT "\n"  \
+            "response_timevalue: %" GST_TIME_FORMAT,      \
+            info,                   \
+            packet->version,        \
+            packet->message_type,   \
+            packet->precision,      \
+            packet->reserved,       \
+            packet->max_freq_error, \
+            GST_TIME_ARGS(wc_timestamp_to_gst_clock_time(packet->originate_timevalue_secs, packet->originate_timevalue_nanos)), \
+            GST_TIME_ARGS(packet->receive_timevalue),   \
+            GST_TIME_ARGS(packet->transmit_timevalue),  \
+            GST_TIME_ARGS(packet->response_timevalue)); \
+    }
 
 /**
  * gst_dvb_css_wc_packet_new:
@@ -73,6 +102,7 @@ GstDvbCssWcPacket *
 gst_dvb_css_wc_packet_new (const guint8 * buffer)
 {
   GstDvbCssWcPacket *ret;
+  GType init = GST_DVB_CSS_WC_TYPE_PACKET;
 
   g_assert (sizeof (GstClockTime) == 8);
 
@@ -89,6 +119,7 @@ gst_dvb_css_wc_packet_new (const guint8 * buffer)
       ret->originate_timevalue_nanos = GST_READ_UINT32_BE(buffer + 12);
       ret->receive_timevalue = wc_timestamp_to_gst_clock_time(GST_READ_UINT32_BE(buffer + 16), GST_READ_UINT32_BE(buffer + 20));
       ret->transmit_timevalue = wc_timestamp_to_gst_clock_time(GST_READ_UINT32_BE(buffer + 24), GST_READ_UINT32_BE(buffer + 28));
+      ret->response_timevalue = 0;
   } else {
       ret->version = GST_DVB_CSS_WC_VERSION;
       ret->message_type = GST_DVB_CSS_WC_MSG_REQUEST;
@@ -99,7 +130,8 @@ gst_dvb_css_wc_packet_new (const guint8 * buffer)
       ret->originate_timevalue_secs = 0;
       ret->originate_timevalue_nanos = 0;
       ret->receive_timevalue = 0;
-      ret->transmit_timevalue = 0;    
+      ret->transmit_timevalue = 0;
+      ret->response_timevalue = 0;
   }
 
   return ret;
@@ -140,6 +172,7 @@ gst_dvb_css_wc_packet_copy (const GstDvbCssWcPacket * packet)
   ret->originate_timevalue_nanos = packet->originate_timevalue_nanos;
   ret->receive_timevalue = packet->receive_timevalue;
   ret->transmit_timevalue = packet->transmit_timevalue;
+  ret->response_timevalue = packet->response_timevalue;
 
   return ret;
 }
@@ -222,7 +255,9 @@ gst_dvb_css_wc_packet_receive (GSocket * socket,
     } else if (ret < GST_DVB_CSS_WC_PACKET_SIZE) {
       goto short_packet;
     } else {
-      return gst_dvb_css_wc_packet_new ((const guint8 *) buffer);
+      GstDvbCssWcPacket *packet = gst_dvb_css_wc_packet_new ((const guint8 *) buffer);
+      PACKET_LOG("Received packet", packet);
+      return packet;
     }
   }
 
@@ -273,6 +308,7 @@ gst_dvb_css_wc_packet_send (const GstDvbCssWcPacket * packet,
   if (was_blocking)
     g_socket_set_blocking (socket, FALSE);
 
+  PACKET_LOG("Sending packet", packet);
   /* FIXME: avoid pointless alloc/free, serialise into stack-allocated buffer */
   buffer = gst_dvb_css_wc_packet_serialize (packet);
 
@@ -308,22 +344,4 @@ guint32 gst_dvb_css_wc_packet_encode_max_freq_error(gdouble max_freq_error_ppm)
 gdouble gst_dvb_css_wc_packet_decode_max_freq_error(guint32 max_freq_error)
 {
     return (gdouble)max_freq_error/256;
-}
-
-void gst_dvb_css_wc_packet_print(const GstDvbCssWcPacket * packet)
-{
-    if(packet == NULL){
-	return;
-    }
-
-    GST_DEBUG("Packet:\n\n");
-    GST_DEBUG("version: %u\n", packet->version);
-    GST_DEBUG("message_type: %u\n", packet->message_type);
-    GST_DEBUG("precision: %i\n", packet->precision);
-    GST_DEBUG("reserved: %u\n", packet->reserved);
-    GST_DEBUG("max_freq_error: %u\n", packet->max_freq_error);
-    GST_DEBUG("originate_timevalue_secs: %u\n", packet->originate_timevalue_secs);
-    GST_DEBUG("originate_timevalue_nanos: %u\n", packet->originate_timevalue_nanos);
-    GST_DEBUG("receive_timevalue: %" G_GUINT64_FORMAT "\n", packet->receive_timevalue);
-    GST_DEBUG("transmit_timevalue: %" G_GUINT64_FORMAT "\n\n", packet->transmit_timevalue);
 }
