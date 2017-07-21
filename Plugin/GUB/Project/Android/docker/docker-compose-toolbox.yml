@@ -10,7 +10,7 @@ services:
         NDK_APP_ABI:              armeabi-v7a
         ANT_VERSION:              1.9.4
         GST_ANDROID_ARCH:         armv7
-        GST_ANDROID_VERSION:      1.8.3
+        GST_ANDROID_VERSION:      1.10.5
     environment:
       MOUNT_GST_UNITY_BRIDGE:     /mnt/gst-unity-bridge
       MOUNT_OUTPUT_PATH:          /mnt/output
@@ -19,4 +19,3 @@ services:
     volumes:
       - /gst-unity-bridge:/mnt/gst-unity-bridge:ro
       - /gst-unity-bridge/Plugin/GUB/Build/Android:/mnt/output
-      - /gst-unity-bridge/Plugin/GUB/Build/android_arm_gst_1.10.2/armeabi-v7a/libgstreamer_android.so:/mnt/libgstreamer_android.so

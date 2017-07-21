@@ -305,7 +305,7 @@ EXPORT_API void gub_pipeline_setup_decoding_clock(GUBPipeline *pipeline, const g
         gub_pipeline_close(pipeline);
     }
 
-    full_pipeline_description = g_strdup_printf("playbin uri=%s", uri);
+    full_pipeline_description = g_strdup_printf("playbin3 uri=%s", uri);
     gub_log_pipeline(pipeline, "Using pipeline: %s", full_pipeline_description);
 
     pipeline->pipeline = gst_parse_launch(full_pipeline_description, &err);
