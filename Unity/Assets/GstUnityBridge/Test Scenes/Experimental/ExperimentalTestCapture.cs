@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+#if EXPERIMENTAL
 public class ExperimentalTestCapture : MonoBehaviour
 {
 
@@ -25,3 +26,4 @@ public class ExperimentalTestCapture : MonoBehaviour
         RenderTexture.active = null;
     }
 }
+#endif
