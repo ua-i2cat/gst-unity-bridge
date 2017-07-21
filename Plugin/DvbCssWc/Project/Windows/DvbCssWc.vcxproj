@@ -177,6 +177,7 @@
     <ClInclude Include="..\..\Source\export\server-export.h" />
     <ClInclude Include="..\..\Source\export\client-export.h" />
     <ClInclude Include="..\..\Source\gstdvbcsswcclient.h" />
+    <ClInclude Include="..\..\Source\gstdvbcsswccommon.h" />
     <ClInclude Include="..\..\Source\gstdvbcsswcpacket.h" />
     <ClInclude Include="..\..\Source\gstdvbcsswcserver.h" />
   </ItemGroup>

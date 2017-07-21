@@ -21,6 +21,7 @@
     <ClInclude Include="..\..\Source\export\server-export.h">
       <Filter>export</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\gstdvbcsswccommon.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="export">

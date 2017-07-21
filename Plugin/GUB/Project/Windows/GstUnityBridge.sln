@@ -8,7 +8,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GstUnityBridge", "GstUnityB
 		{F9DE5C55-0645-4BCE-835F-AC1CFCB7DAC9} = {F9DE5C55-0645-4BCE-835F-AC1CFCB7DAC9}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libDvbCssWc", "..\..\..\DvbCssWc\Project\Windows\libDvbCssWc.vcxproj", "{F9DE5C55-0645-4BCE-835F-AC1CFCB7DAC9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DvbCssWc", "..\..\..\DvbCssWc\Project\Windows\DvbCssWc.vcxproj", "{F9DE5C55-0645-4BCE-835F-AC1CFCB7DAC9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

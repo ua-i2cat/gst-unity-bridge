@@ -50,6 +50,15 @@ public class GstUnityBridgeStarter : MonoBehaviour
     /// </summary>
     void LoadGStreamer()
     {
+        try
+        {
+            GStreamer.AddPluginsToPath();
+        }
+        catch
+        {
+            Debug.LogWarning("GStreamer not loaded correctly.");
+        }
+
         GStreamer.GUBUnityDebugLogPFN log_handler = null;
         if (Application.isEditor && GStreamerDebugActivated)
         {
@@ -57,8 +66,6 @@ public class GstUnityBridgeStarter : MonoBehaviour
         }
 
         GStreamer.Ref(GStreamerDebugString.Length == 0 ? null : GStreamerDebugString, log_handler);
-
-        GStreamer.AddPluginsToPath();
     }
 
 
