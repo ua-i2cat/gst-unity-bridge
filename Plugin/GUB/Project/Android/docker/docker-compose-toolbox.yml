@@ -19,4 +19,3 @@ services:
     volumes:
       - /gst-unity-bridge:/mnt/gst-unity-bridge:ro
       - /gst-unity-bridge/Plugin/GUB/Build/Android:/mnt/output
-      - /gst-unity-bridge/Build/android_arm_gst_1.10.5/armeabi-v7a/libgstreamer_android.so:/mnt/libgstreamer_android.so
