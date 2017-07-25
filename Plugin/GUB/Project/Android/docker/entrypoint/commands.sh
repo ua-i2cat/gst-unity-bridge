@@ -19,15 +19,6 @@ function copyRepo
   done
 }
 
-function buildTest
-{
-  # it HAVE TO be subdirectory of ${MOUNT_OUTPUT_PATH}
-  OUTPUT_PATH=${MOUNT_OUTPUT_PATH}/test
-  cd $DOCKER_GST_UNITY_BRIDGE/Plugin/GUB/Project/Android/noUnityTest
-  buildAPK debug $OUTPUT_PATH
-  cp ./bin/TestGUB-debug.apk $OUTPUT_PATH
-}
-
 function buildGUB
 {
   # it HAVE TO be subdirectory of ${MOUNT_OUTPUT_PATH}

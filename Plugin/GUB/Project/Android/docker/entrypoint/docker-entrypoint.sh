@@ -2,10 +2,9 @@
 . $(dirname $0)/commands.sh
 
 usage="
-$(basename "$0") [-t] [-g] [-h] -- program to build GUB (GStreamer Unity Bridge)
+$(basename "$0") [-g] [-h] -- program to build GUB (GStreamer Unity Bridge)
 
 where:
-    -t | --test    build android application for testing GUB
     -g | --gstAnd  use prebuilded libgstreamer_android.so
     -h | --help    show this help text
 "
@@ -18,9 +17,6 @@ while [[ $# -gt 0 ]]
 do
   key="$1"
   case $key in
-
-    -t|--test)    BUILD_TEST=true
-                  ;;
 
     -g|--gstAnd)  COPY_GST_AND_LIB=true
                   ;;

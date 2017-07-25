@@ -55,21 +55,6 @@ See help:
 ./build.sh -h
 ```
 
-
-### Test
-
-Build application for testing GUB without Unity use ``-t`` or ``--test``:
-
-```
-./build.sh -t
-```
-
-Upload the testing application on connected android device:
-
-```
-./noUnityTest/upload.sh
-```
-
 ### Settings
 
 In ``docker/docker-compose.yml`` is configuration for building and running docker image.  
@@ -123,22 +108,6 @@ See help:
 
 ```
 docker-compose -f docker/docker-compose.yml run gub-android -h
-```
-
-
-### Test
-
-Build application for testing GUB without Unity use ``-t`` or ``--test``:
-
-```
-docker-compose -f docker/docker-compose.yml run gub-android -t
-```
-
-Upload the testing application on connected android device:
-
-```
-adb uninstall com.testgub
-adb install -r path/to/test/TestGUB-debug.apk
 ```
 
 ### Settings
@@ -205,23 +174,6 @@ See help:
 ```
 docker-compose -f docker/docker-compose-toolbox.yml run gub-android -h
 ```
-
-
-### Test
-
-Build application for testing GUB without Unity use ``-t`` or ``--test``:
-
-```
-docker-compose -f docker/docker-compose-toolbox.yml run gub-android -t
-```
-
-Upload the testing application on connected android device:
-
-```
-adb uninstall com.testgub
-adb install -r path/to/test/TestGUB-debug.apk
-```
-
 
 ### Settings
 
