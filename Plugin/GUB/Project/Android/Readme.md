@@ -37,24 +37,6 @@ Compile GUB for Android:
 ```
 
 
-### Options
-
-* ``-g`` or ``--gstAnd``  
-Build GUB with own prebuild of libgstreamer_android.so file:  
-(path to the file set in ``docker/docker-compose.yml``)
-
-```
-./build.sh -g
-```
-
-
-* ``-h`` or ``--help``  
-See help:
-
-```
-./build.sh -h
-```
-
 ### Settings
 
 In ``docker/docker-compose.yml`` is configuration for building and running docker image.  
@@ -91,24 +73,6 @@ Compile GUB for Android:
 docker-compose -f docker/docker-compose.yml run gub-android
 ```
 
-
-### Options
-
-* ``-g`` or ``--gstAnd``  
-Build GUB with own prebuild of libgstreamer_android.so file:  
-(path to the file set in ``docker/docker-compose.yml``)
-
-```
-docker-compose -f docker/docker-compose.yml run gub-android -g
-```
-
-
-* ``-h`` or ``--help``  
-See help:
-
-```
-docker-compose -f docker/docker-compose.yml run gub-android -h
-```
 
 ### Settings
 
@@ -156,24 +120,6 @@ Compile GUB for Android:
 docker-compose -f docker/docker-compose-toolbox.yml run gub-android
 ```
 
-
-### Options
-
-* ``-g`` or ``--gstAnd``  
-Build GUB with own prebuild of libgstreamer_android.so file:  
-(path to the file set in ``docker/docker-compose-toolbox.yml``)
-
-```
-docker-compose -f docker/docker-compose-toolbox.yml run gub-android -g
-```
-
-
-* ``-h`` or ``--help``  
-See help:
-
-```
-docker-compose -f docker/docker-compose-toolbox.yml run gub-android -h
-```
 
 ### Settings
 
