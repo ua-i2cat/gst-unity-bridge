@@ -16,6 +16,7 @@ while [[ $# -gt 0 ]]
 do
   key="$1"
   case $key in
+
     -h|--help)    show_help=true
                   ;;
 
@@ -30,3 +31,7 @@ if [ "$show_help" = true ]; then
   echo "$usage"
   exit
 fi
+
+copyRepo
+
+buildGUB

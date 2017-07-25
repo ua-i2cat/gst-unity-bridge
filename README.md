@@ -30,6 +30,9 @@ DVB-CSS-WC support.
 - iOS support
 - OSX support
 
+# REQUIREMENT
+- Unity version 5.6.0 or higuer
+
 # ACKNOWLEDGEMENT
 
-This software has been created within the [ImmersiaTV](http://immersiatv.eu) project. This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement 688619.
+This software has been created within the [ImmersiaTV](http://immersiatv.eu) project. This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement 688619.
