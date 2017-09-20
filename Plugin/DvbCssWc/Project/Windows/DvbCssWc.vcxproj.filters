@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\Source\gstdvbcsswcclient.c" />
+    <ClCompile Include="..\..\Source\gstdvbcsswcpacket.c" />
+    <ClCompile Include="..\..\Source\gstdvbcsswcserver.c" />
+    <ClCompile Include="..\..\Source\export\client-export.c">
+      <Filter>export</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\export\server-export.c">
+      <Filter>export</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Source\gstdvbcsswcclient.h" />
+    <ClInclude Include="..\..\Source\gstdvbcsswcpacket.h" />
+    <ClInclude Include="..\..\Source\gstdvbcsswcserver.h" />
+    <ClInclude Include="..\..\Source\export\client-export.h">
+      <Filter>export</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\export\server-export.h">
+      <Filter>export</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\gstdvbcsswccommon.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="export">
+      <UniqueIdentifier>{0dbc6078-d8eb-47aa-880f-05c60e06d67a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

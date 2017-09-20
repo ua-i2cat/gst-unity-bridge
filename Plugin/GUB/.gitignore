@@ -1,0 +1,19 @@
+#gub .gitignore
+
+Build/Release/android_arm
+Build/Release/x86
+Build/Release/x86_64
+
+Build/Debug/android_arm
+Build/Debug/x86
+Build/Debug/x86_64
+
+Project/obj/
+Project/*.exe
+Project/*.mdb
+Project/*.pc
+Project/*.pidb
+Project/*.userprefs
+Project/*.usertasks
+Project/.DS_Store
+Project/bin/
