@@ -96,13 +96,13 @@ EXPORT_API void gub_pipeline_close(GUBPipeline *pipeline)
     if (pipeline->last_sample) {
         gst_sample_unref(pipeline->last_sample);
     }
+    g_free(pipeline->name);
     memset(pipeline, 0, sizeof(GUBPipeline));
 }
 
 EXPORT_API void gub_pipeline_destroy(GUBPipeline *pipeline)
 {
     gub_pipeline_close(pipeline);
-    g_free(pipeline->name);
     free(pipeline);
 }
 
